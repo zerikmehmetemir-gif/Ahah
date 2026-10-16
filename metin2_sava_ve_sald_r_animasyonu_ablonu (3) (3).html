@@ -48,6 +48,48 @@
             border: 1px solid rgba(151, 122, 72, 0.72);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), inset 0 1px rgba(255, 232, 181, 0.06);
         }
+        .inventory-window {
+            background: linear-gradient(135deg, rgba(32, 27, 22, 0.985), rgba(13, 13, 13, 0.985));
+            border: 1px solid rgba(192, 151, 76, 0.78);
+            box-shadow: 0 18px 70px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 220, 150, 0.08);
+        }
+        .item-slot {
+            position: relative;
+            aspect-ratio: 1;
+            min-width: 0;
+            border: 1px solid rgba(133, 107, 67, 0.7);
+            background: linear-gradient(145deg, rgba(62, 52, 39, 0.82), rgba(17, 16, 15, 0.96));
+            box-shadow: inset 0 1px rgba(255, 232, 181, 0.08), 0 1px 3px rgba(0, 0, 0, 0.55);
+            touch-action: manipulation;
+        }
+        .item-slot:hover, .item-slot:focus-visible {
+            border-color: #e5bd72;
+            outline: none;
+            filter: brightness(1.2);
+        }
+        .item-slot.empty { background: rgba(7, 7, 7, 0.55); }
+        .equipment-slot { width: 42px; flex: 0 0 42px; }
+        .inventory-tab[aria-selected="true"] {
+            color: #f6d994;
+            border-color: #c49a50;
+            background: rgba(107, 75, 32, 0.36);
+        }
+        .item-tooltip {
+            position: fixed;
+            z-index: 80;
+            max-width: 230px;
+            pointer-events: none;
+            padding: 8px 10px;
+            color: #e7dfcf;
+            background: rgba(12, 11, 10, 0.97);
+            border: 1px solid rgba(194, 155, 84, 0.8);
+            box-shadow: 0 5px 18px rgba(0,0,0,.7);
+        }
+        @media (max-width: 640px) {
+            #inventory-modal { padding: 8px; }
+            #inventory-window { max-height: calc(100dvh - 16px); overflow-y: auto; }
+            .equipment-slot { width: 36px; flex-basis: 36px; }
+        }
         .skill-btn {
             position: relative;
             transition: transform 0.12s ease, border-color 0.15s;
@@ -150,6 +192,11 @@
         </div>
 
         <div class="rpg-panel rounded p-1 flex items-center gap-1 pointer-events-auto">
+            <button id="inventory-open-btn" onclick="toggleInventory(true)" class="w-8 h-8 rounded-sm bg-stone-900 border border-amber-700/70 text-amber-200 flex items-center justify-center" title="Envanter (I)" aria-label="Envanteri aç">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M5 8h14l1 12H4L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2M9 12h6"/>
+                </svg>
+            </button>
             <button id="sound-btn" onclick="toggleAudio()" class="w-8 h-8 rounded-sm bg-stone-900 border border-stone-600 text-stone-200 flex items-center justify-center" title="Ses" aria-label="Sesi aç veya kapat" aria-pressed="false">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path id="sound-muted-mark" class="hidden" d="m16 9 5 6m0-6-5 6"/>
@@ -162,6 +209,58 @@
             </button>
         </div>
     </header>
+
+    <div id="inventory-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onclick="if (event.target === this) toggleInventory(false)">
+        <section id="inventory-window" class="inventory-window w-full max-w-5xl max-h-[calc(100vh-32px)] overflow-hidden text-stone-200" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+            <div class="flex items-center justify-between border-b border-amber-800/50 px-4 py-3 sm:px-5">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center border border-amber-700/70 bg-stone-950 text-amber-300">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 8h14l1 12H4L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+                    </div>
+                    <div><h2 id="inventory-title" class="font-rpg text-base text-amber-100">Karakter</h2><p class="text-[10px] text-stone-400">Savaşçı · Seviye 1 · Mavi Bayrak</p></div>
+                </div>
+                <button id="inventory-close-btn" onclick="toggleInventory(false)" class="flex h-8 w-8 items-center justify-center border border-stone-700 text-stone-400 hover:border-amber-500 hover:text-amber-100" title="Kapat" aria-label="Envanteri kapat">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                </button>
+            </div>
+            <div class="grid gap-0 md:grid-cols-[300px_minmax(0,1fr)]">
+                <section class="border-b border-amber-900/40 p-4 md:border-b-0 md:border-r" aria-label="Karakter ekipmanı">
+                    <div class="mb-3 flex items-center justify-between"><h3 class="font-rpg text-xs tracking-wide text-amber-200">Ekipman</h3><span class="text-[10px] text-stone-500">SAV 128</span></div>
+                    <div class="flex justify-center gap-2">
+                        <div class="flex flex-col gap-2" id="equipment-left"></div>
+                        <div class="relative flex h-[174px] w-[116px] items-center justify-center overflow-hidden border border-amber-900/50 bg-[radial-gradient(ellipse_at_center,rgba(134,90,37,.22),rgba(12,12,12,.88)_72%)]">
+                            <div class="absolute inset-x-3 top-4 h-1/2 rounded-t-full border border-amber-800/25"></div>
+                            <svg class="relative h-32 w-24 text-amber-700/80" viewBox="0 0 100 150" fill="none" aria-hidden="true">
+                                <circle cx="50" cy="22" r="13" fill="currentColor" opacity=".72"/><path d="M37 40 24 50l7 35 8 3-4 47h30l-4-47 8-3 7-35-13-10-13 4-13-4Z" fill="currentColor" opacity=".62"/><path d="m37 41 13 10 13-10M38 87h24M50 51v35" stroke="#e4c17d" stroke-opacity=".5" stroke-width="2"/><path d="m26 52-9 41m57-41 9 41" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+                            </svg>
+                            <span class="absolute bottom-1 text-[8px] uppercase tracking-[.16em] text-amber-300/60">Savaşçı</span>
+                        </div>
+                        <div class="flex flex-col gap-2" id="equipment-right"></div>
+                    </div>
+                    <div class="mt-3 grid grid-cols-3 gap-1 border-t border-stone-800 pt-3 text-center">
+                        <div><div class="text-[9px] uppercase text-stone-500">Saldırı</div><div id="stat-attack" class="text-xs font-semibold text-rose-300">128</div></div>
+                        <div><div class="text-[9px] uppercase text-stone-500">Savunma</div><div id="stat-defense" class="text-xs font-semibold text-sky-300">64</div></div>
+                        <div><div class="text-[9px] uppercase text-stone-500">Hareket</div><div class="text-xs font-semibold text-emerald-300">100</div></div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between border-t border-stone-800 pt-3 text-[10px]">
+                        <span class="text-stone-400">Yang</span><span class="font-semibold text-yellow-300">2.450.000</span>
+                    </div>
+                </section>
+                <section class="min-w-0 p-4" aria-label="Eşya envanteri">
+                    <div class="mb-3 flex items-center justify-between gap-2"><h3 class="font-rpg text-xs tracking-wide text-amber-200">Envanter</h3><span id="inventory-count" class="text-[10px] text-stone-500"></span></div>
+                    <div class="mb-3 grid grid-cols-4 gap-1 border-b border-stone-800 pb-2" role="tablist" aria-label="Envanter kategorileri">
+                        <button class="inventory-tab border border-transparent px-1 py-1.5 text-[10px] text-stone-400" role="tab" aria-selected="true" onclick="setInventoryFilter('all', this)">Tümü</button>
+                        <button class="inventory-tab border border-transparent px-1 py-1.5 text-[10px] text-stone-400" role="tab" aria-selected="false" onclick="setInventoryFilter('equipment', this)">Ekipman</button>
+                        <button class="inventory-tab border border-transparent px-1 py-1.5 text-[10px] text-stone-400" role="tab" aria-selected="false" onclick="setInventoryFilter('consumable', this)">Sarf</button>
+                        <button class="inventory-tab border border-transparent px-1 py-1.5 text-[10px] text-stone-400" role="tab" aria-selected="false" onclick="setInventoryFilter('material', this)">Malzeme</button>
+                    </div>
+                    <div id="inventory-grid" class="grid grid-cols-5 gap-1.5 sm:grid-cols-6" aria-live="polite"></div>
+                    <div class="mt-3 flex items-center justify-between border-t border-stone-800 pt-2 text-[9px] text-stone-500"><span id="inventory-message" role="status">Bir eşya seç.</span><span>YANG <b class="text-yellow-300">2.45M</b></span></div>
+                </section>
+            </div>
+        </section>
+    </div>
+    <div id="item-tooltip" class="item-tooltip hidden"></div>
 
     <div class="fixed top-16 left-0 right-0 z-20 flex justify-center pointer-events-none">
         <div id="combo-indicator" class="opacity-0 transition-all duration-200 rpg-panel px-3 py-1 rounded text-[11px] font-semibold text-amber-200">
@@ -477,6 +576,176 @@
             const button = document.getElementById('toggle-panel-btn');
             const isOpen = panel.classList.toggle('hidden') === false;
             button.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        const inventoryItems = [
+            { id: 'sword-starter', name: 'Uzun Kılıç +0', type: 'equipment', slot: 'weapon', icon: '⚔', color: '#d8d2c5', attack: 8, modelValue: 'longsword', description: 'Yeni başlayan savaşçıların güvenilir silahı.' },
+            { id: 'armor-starter', name: 'Keşiş Zırhı +0', type: 'equipment', slot: 'armor', icon: '⛨', color: '#72a9a5', defense: 6, modelValue: 'monk', description: 'Hafif, dengeli ve dayanıklı.' },
+            { id: 'sword-moon', name: 'Dolunay Kılıcı +9', type: 'equipment', slot: 'weapon', icon: '⚔', color: '#8dd6e8', attack: 48, modelValue: 'greatsword', description: 'Ay ışığıyla parlayan güçlü bir kılıç.' },
+            { id: 'armor-dragon', name: 'Ejderha Zırhı +8', type: 'equipment', slot: 'armor', icon: '⛨', color: '#e58b59', defense: 36, modelValue: 'dragonred', description: 'Ejderha pullarıyla güçlendirilmiş zırh.' },
+            { id: 'helmet-band', name: 'Savaşçı Alınlığı', type: 'equipment', slot: 'helmet', icon: '♜', color: '#d8b56d', defense: 5, modelValue: 'band', description: 'Baş bölgesini darbelerden korur.' },
+            { id: 'shield-iron', name: 'Demir Kalkan +6', type: 'equipment', slot: 'shield', icon: '⬟', color: '#9bb5c5', defense: 12, description: 'Sağlam demirden dövülmüş kalkan.' },
+            { id: 'boots-wind', name: 'Rüzgar Çizmesi +4', type: 'equipment', slot: 'boots', icon: '♧', color: '#b7d691', defense: 4, description: 'Hafif yapısıyla adımlarını hızlandırır.' },
+            { id: 'gloves-leather', name: 'Deri Eldiven +3', type: 'equipment', slot: 'gloves', icon: '✣', color: '#c89e78', attack: 3, description: 'Kılıç kavrayışını güçlendirir.' },
+            { id: 'necklace-jade', name: 'Yeşim Kolye', type: 'equipment', slot: 'necklace', icon: '◇', color: '#6fd6aa', defense: 3, description: 'İşlenmiş yeşim taşı, hafifçe parlıyor.' },
+            { id: 'ring-copper', name: 'Bakır Yüzük', type: 'equipment', slot: 'ring', icon: '◉', color: '#dfa76c', attack: 2, description: 'Sade ama kullanışlı bir yüzük.' },
+            { id: 'potion-red', name: 'Kırmızı İksir (K)', type: 'consumable', icon: '🧪', color: '#f06b61', count: 8, effect: 'hp', description: 'Canı 30 puan yeniler.' },
+            { id: 'potion-blue', name: 'Mavi İksir (K)', type: 'consumable', icon: '🧪', color: '#6bb8ef', count: 5, effect: 'mp', description: 'Manayı 25 puan yeniler.' },
+            { id: 'potion-green', name: 'Yeşil İksir (K)', type: 'consumable', icon: '⚗', color: '#91d878', count: 3, effect: 'hp', description: 'Canı 15 puan yeniler.' },
+            { id: 'upgrade-stone', name: 'Ruh Taşı', type: 'material', icon: '◆', color: '#c28cf2', count: 2, description: 'Ekipman geliştirmede kullanılır.' },
+            { id: 'upgrade-scroll', name: 'Demirci Tavsiyesi', type: 'material', icon: '▤', color: '#e3ce91', count: 4, description: 'Yükseltme denemesini korur.' },
+            { id: 'monster-claw', name: 'Kurt Pençesi', type: 'material', icon: '⌁', color: '#c6c0ad', count: 12, description: 'Görev ve üretim malzemesi.' }
+        ];
+        const equippedItems = {
+            weapon: 'sword-starter', armor: 'armor-starter', helmet: null, shield: null,
+            gloves: null, boots: null, necklace: null, earring: null, ring: null, belt: null
+        };
+        const equipmentSlots = [
+            { id: 'helmet', label: 'Miğfer', side: 'left' }, { id: 'necklace', label: 'Kolye', side: 'left' },
+            { id: 'weapon', label: 'Silah', side: 'left' }, { id: 'shield', label: 'Kalkan', side: 'left' },
+            { id: 'earring', label: 'Küpe', side: 'left' }, { id: 'armor', label: 'Zırh', side: 'right' },
+            { id: 'gloves', label: 'Eldiven', side: 'right' }, { id: 'boots', label: 'Ayakkabı', side: 'right' },
+            { id: 'ring', label: 'Yüzük', side: 'right' }, { id: 'belt', label: 'Kemer', side: 'right' }
+        ];
+        let inventoryFilter = 'all';
+        let inventoryHp = 100;
+        let inventoryMp = 92;
+
+        function toggleInventory(forceOpen) {
+            const modal = document.getElementById('inventory-modal');
+            if (!modal) return;
+            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : modal.classList.contains('hidden');
+            modal.classList.toggle('hidden', !shouldOpen);
+            if (shouldOpen) {
+                renderInventory();
+                renderEquipment();
+                document.getElementById('inventory-close-btn')?.focus();
+            } else {
+                document.getElementById('inventory-open-btn')?.focus();
+            }
+        }
+
+        function setInventoryFilter(filter, button) {
+            inventoryFilter = filter;
+            document.querySelectorAll('.inventory-tab').forEach(tab => tab.setAttribute('aria-selected', String(tab === button)));
+            renderInventory();
+        }
+
+        function getInventoryItem(id) {
+            return inventoryItems.find(item => item.id === id);
+        }
+
+        function renderEquipment() {
+            ['left', 'right'].forEach(side => {
+                const container = document.getElementById(`equipment-${side}`);
+                container.innerHTML = '';
+                equipmentSlots.filter(slot => slot.side === side).forEach(slot => {
+                    const item = getInventoryItem(equippedItems[slot.id]);
+                    const button = document.createElement('button');
+                    button.className = 'item-slot equipment-slot flex items-center justify-center text-xl';
+                    button.style.color = item?.color || '#756b5a';
+                    button.title = item ? `${slot.label}: ${item.name} · çıkarmak için tıkla` : `${slot.label}: boş`;
+                    button.setAttribute('aria-label', button.title);
+                    button.innerHTML = item ? item.icon : '<span class="text-sm text-stone-700">+</span>';
+                    button.addEventListener('click', () => unequipItem(slot.id));
+                    container.appendChild(button);
+                });
+            });
+            let attack = 128;
+            let defense = 64;
+            Object.values(equippedItems).forEach(id => {
+                const item = getInventoryItem(id);
+                if (item) { attack += item.attack || 0; defense += item.defense || 0; }
+            });
+            document.getElementById('stat-attack').textContent = attack;
+            document.getElementById('stat-defense').textContent = defense;
+        }
+
+        function renderInventory() {
+            const grid = document.getElementById('inventory-grid');
+            if (!grid) return;
+            const equippedIds = new Set(Object.values(equippedItems).filter(Boolean));
+            const visibleItems = inventoryItems.filter(item => !equippedIds.has(item.id) && (inventoryFilter === 'all' || item.type === inventoryFilter));
+            grid.innerHTML = '';
+            visibleItems.slice(0, 30).forEach(item => {
+                const button = document.createElement('button');
+                button.className = 'item-slot flex items-center justify-center text-2xl';
+                button.style.color = item.color;
+                button.title = `${item.name}${item.count ? ` x${item.count}` : ''} · ${item.description}`;
+                button.setAttribute('aria-label', button.title);
+                button.innerHTML = `<span class="drop-shadow">${item.icon}</span>${item.count > 1 ? `<span class="absolute bottom-0 right-1 text-[9px] font-bold text-white drop-shadow">${item.count}</span>` : ''}`;
+                button.addEventListener('click', () => selectInventoryItem(item));
+                grid.appendChild(button);
+            });
+            for (let index = visibleItems.length; index < 30; index++) {
+                const empty = document.createElement('div');
+                empty.className = 'item-slot empty';
+                empty.setAttribute('aria-hidden', 'true');
+                grid.appendChild(empty);
+            }
+            document.getElementById('inventory-count').textContent = `${visibleItems.length} / 30`;
+        }
+
+        function selectInventoryItem(item) {
+            const message = document.getElementById('inventory-message');
+            if (item.type === 'equipment') {
+                const previousId = equippedItems[item.slot];
+                equippedItems[item.slot] = item.id;
+                if (item.slot === 'weapon' && item.modelValue) {
+                    document.getElementById('sword-select').value = item.modelValue;
+                    changeSwordType(item.modelValue);
+                } else if (item.slot === 'armor' && item.modelValue) {
+                    document.getElementById('armor-select').value = item.modelValue;
+                    changeArmorTheme(item.modelValue);
+                } else if (item.slot === 'helmet' && item.modelValue) {
+                    document.getElementById('helmet-select').value = item.modelValue;
+                    changeHelmetMode(item.modelValue);
+                }
+                message.textContent = `${item.name} kuşanıldı.`;
+                if (previousId && previousId !== item.id) message.textContent += ' Önceki eşya çantaya eklendi.';
+                renderEquipment();
+                renderInventory();
+            } else if (item.type === 'consumable') {
+                if (item.effect === 'hp') inventoryHp = Math.min(100, inventoryHp + (item.id === 'potion-green' ? 15 : 30));
+                if (item.effect === 'mp') inventoryMp = Math.min(100, inventoryMp + 25);
+                if (item.count > 1) item.count--;
+                else inventoryItems.splice(inventoryItems.indexOf(item), 1);
+                const bars = document.querySelectorAll('.hud-bar > div');
+                if (bars[0]) bars[0].style.width = `${inventoryHp}%`;
+                if (bars[1]) bars[1].style.width = `${inventoryMp}%`;
+                message.textContent = `${item.name} kullanıldı.`;
+                renderInventory();
+            } else {
+                message.textContent = `${item.name}: ${item.description}`;
+            }
+        }
+
+        function unequipItem(slotId) {
+            const itemId = equippedItems[slotId];
+            if (!itemId) return;
+            const item = getInventoryItem(itemId);
+            if (itemId === 'sword-starter' || itemId === 'armor-starter') {
+                document.getElementById('inventory-message').textContent = 'Başlangıç ekipmanı çıkarılamaz.';
+                return;
+            }
+            if (slotId === 'weapon') {
+                document.getElementById('sword-select').value = 'longsword';
+                changeSwordType('longsword');
+                equippedItems[slotId] = 'sword-starter';
+            } else if (slotId === 'armor') {
+                document.getElementById('armor-select').value = 'monk';
+                changeArmorTheme('monk');
+                equippedItems[slotId] = 'armor-starter';
+            } else if (slotId === 'helmet') {
+                document.getElementById('helmet-select').value = 'none';
+                changeHelmetMode('none');
+                equippedItems[slotId] = null;
+            } else {
+                equippedItems[slotId] = null;
+            }
+            document.getElementById('inventory-message').textContent = `${item?.name || 'Eşya'} çıkarıldı.`;
+            renderEquipment();
+            renderInventory();
         }
 
         function spawnDamageNumber(dmg, isCrit = true) {
@@ -1355,9 +1624,10 @@
                 water.material.opacity = 0.82 + Math.sin(elapsedTime * 1.8 + index) * 0.06;
             });
             villageVillagers.forEach(npc => {
-                const phase = elapsedTime * 1.7 + npc.userData.idlePhase;
-                npc.position.y = npc.userData.baseY + Math.sin(phase * 0.8) * 0.012;
-                npc.rotation.y = npc.userData.baseFacing + Math.sin(phase * 0.52) * 0.018;
+                const phase = elapsedTime * npc.userData.idleSpeed + npc.userData.idlePhase;
+                npc.position.y = npc.userData.baseY + Math.sin(phase * 0.8) * 0.018;
+                npc.rotation.y = npc.userData.baseFacing + Math.sin(phase * 0.32) * npc.userData.idleTurn;
+                npc.rotation.z = Math.sin(phase * 0.66) * npc.userData.idleLean;
             });
             villageSmokePuffs.forEach(puff => {
                 const progress = (elapsedTime * 0.12 + puff.phase) % 1;
@@ -2451,6 +2721,9 @@
                 }
                 batchVillagerMeshes(npc);
                 npc.userData.idlePhase = Math.random() * Math.PI * 2;
+                npc.userData.idleSpeed = 1.05 + Math.random() * 0.55;
+                npc.userData.idleTurn = profession === 'guard' ? 0.12 : profession === 'traveler' ? 0.095 : 0.07;
+                npc.userData.idleLean = profession === 'merchant' || profession === 'herbalist' ? 0.018 : 0.01;
                 npc.userData.baseY = getVillageTerrainHeight(x, z);
                 npc.userData.baseFacing = facing;
                 npc.position.y = npc.userData.baseY;
@@ -2792,6 +3065,19 @@
             makeVillager(-37.5, 36, 0x526146, -0.5, 'Tarla Bekçisi', 'guard');
             makeVillager(38, -36, 0x78694a, 2.4, 'Köy Sakini', 'villager');
 
+            const ambientVillagers = [
+                [-1.8, -15.1, 0x80553b, 0.2, 'traveler'], [1.9, -15.2, 0x485b68, 2.9, 'villager'],
+                [-5.4, 13.7, 0x75633f, 1.1, 'herbalist'], [5.5, 14.1, 0x7a4837, -1.2, 'traveler'],
+                [-22, -5.8, 0x58654a, 0.5, 'merchant'], [22, 6.8, 0x63504b, -0.7, 'villager'],
+                [-31, 16, 0x68543e, 0.2, 'herbalist'], [31, -16, 0x4b5965, -2.7, 'traveler'],
+                [-4, 31, 0x82523c, 0.8, 'traveler'], [4, 31, 0x5b6346, -0.8, 'villager'],
+                [-53, 9, 0x765039, 0.4, 'villager'], [53, -9, 0x52604b, -2.4, 'traveler'],
+                [-52, -10, 0x766440, 0.6, 'merchant'], [52, 10, 0x475866, -0.5, 'guard']
+            ];
+            ambientVillagers.slice(0, reducedGraphics ? 6 : ambientVillagers.length).forEach(([x, z, coat, facing, profession]) => {
+                makeVillager(x, z, coat, facing, '', profession);
+            });
+
             makeBarrel(-18, -12.3, 1);
             makeBarrel(-17.1, -12.1, 0.82);
             makeBarrel(18, -12, 1.05);
@@ -2817,6 +3103,14 @@
             makePlanter(-18.5, -17.9, 0xd0a34d);
             makePlanter(-13.1, 18, 0xc46452);
             makePlanter(13.8, 18.1, 0xe0c475);
+            makePlanter(-16.8, 8.9, 0xc45c48);
+            makePlanter(16.8, 8.9, 0xd1ae59);
+            makePlanter(-16.7, -8.8, 0xa95551);
+            makePlanter(16.7, -8.8, 0xb69b60);
+            makePlanter(-29, 13.5, 0xd0a34d);
+            makePlanter(29, -13.5, 0xc46452);
+            makeBarrel(-29.8, -13.4, 0.88);
+            makeBarrel(29.8, 13.4, 0.92);
             makeHandcart(-29.4, 20.6, -0.8);
             makeWoodpile(42.4, -18.1);
 
@@ -6695,6 +6989,17 @@
 
             window.addEventListener('keydown', (e) => {
                 const key = e.key.toLowerCase();
+                const inventoryOpen = !document.getElementById('inventory-modal').classList.contains('hidden');
+                if (key === 'i') {
+                    e.preventDefault();
+                    toggleInventory(!inventoryOpen);
+                    return;
+                }
+                if (inventoryOpen && key === 'escape') {
+                    toggleInventory(false);
+                    return;
+                }
+                if (inventoryOpen) return;
                 if (key === ' ') {
                     state.isHoldingAttack = true;
                     triggerComboSlash(e);
