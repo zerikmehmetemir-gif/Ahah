@@ -48,6 +48,74 @@
             border: 1px solid rgba(151, 122, 72, 0.72);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), inset 0 1px rgba(255, 232, 181, 0.06);
         }
+        :root {
+            --hud-ink: rgba(12, 15, 16, 0.88);
+            --hud-edge: rgba(205, 169, 104, 0.72);
+            --hud-gold: #e1bd75;
+            --hud-muted: #a9a596;
+        }
+        .hud-frame {
+            position: relative;
+            background: linear-gradient(135deg, rgba(26, 26, 23, 0.94), var(--hud-ink));
+            border: 1px solid var(--hud-edge);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 238, 194, 0.11);
+            backdrop-filter: blur(12px);
+        }
+        .hud-frame::before {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border: 1px solid rgba(255, 231, 174, 0.08);
+            pointer-events: none;
+        }
+        .hud-kicker { color: var(--hud-gold); font: 700 9px 'Cinzel', serif; letter-spacing: 0.08em; }
+        .hud-meter { height: 8px; overflow: hidden; background: rgba(0,0,0,.72); border: 1px solid rgba(0,0,0,.8); box-shadow: inset 0 1px 3px rgba(0,0,0,.9); }
+        .hud-meter > span { display: block; height: 100%; transition: width .25s ease; }
+        .map-field {
+            position: relative;
+            height: 104px;
+            overflow: hidden;
+            border: 1px solid rgba(207, 176, 112, 0.34);
+            background-color: #29332c;
+            background-image: radial-gradient(ellipse at 50% 50%, rgba(157, 137, 91, .22), transparent 68%), linear-gradient(28deg, transparent 46%, rgba(177, 164, 127, .48) 47%, rgba(177, 164, 127, .48) 51%, transparent 52%), linear-gradient(148deg, transparent 42%, rgba(177, 164, 127, .32) 43%, rgba(177, 164, 127, .32) 46%, transparent 47%), repeating-linear-gradient(90deg, transparent 0 22px, rgba(7, 13, 12, .24) 23px 25px), repeating-linear-gradient(0deg, transparent 0 22px, rgba(7, 13, 12, .24) 23px 25px);
+        }
+        .map-field::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse, transparent 42%, rgba(5, 8, 8, .68) 100%); pointer-events: none; }
+        .map-player { position: absolute; z-index: 1; left: 50%; top: 52%; width: 10px; height: 10px; border: 2px solid #fff3cf; background: #e1a64e; box-shadow: 0 0 12px #f3b950; transform: rotate(45deg); }
+        .map-point { position: absolute; z-index: 1; width: 6px; height: 6px; border-radius: 50%; background: #d86f55; box-shadow: 0 0 8px rgba(241, 126, 80, .8); }
+        .quest-row { border-left: 2px solid rgba(203, 159, 79, .75); background: linear-gradient(90deg, rgba(155, 106, 43, .16), transparent); }
+        .quickbar-slot {
+            position: relative;
+            display: flex;
+            width: 42px;
+            height: 44px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(187, 155, 98, .66);
+            background: linear-gradient(145deg, rgba(58, 50, 40, .95), rgba(12, 14, 14, .98));
+            box-shadow: inset 0 1px rgba(255, 236, 192, .1), 0 4px 8px rgba(0,0,0,.3);
+            touch-action: manipulation;
+        }
+        .quickbar-slot:hover, .quickbar-slot:focus-visible { border-color: #f0d18f; filter: brightness(1.2); outline: none; }
+        .quickbar-slot kbd { position: absolute; top: 1px; left: 3px; color: rgba(238, 224, 193, .6); font-size: 8px; }
+        .hud-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(213, 179, 113, .48), transparent); }
+        @media (max-width: 640px) { #monster-target-panel { top: 230px; right: 8px; width: 150px; } }
+        @media (min-width: 900px) and (pointer: fine) {
+            #joystick-zone, #btn-skill-1, #btn-skill-2, #btn-skill-3, #btn-skill-4 { display: none; }
+            #combat-cluster { right: 18px; bottom: 14px; width: 80px; height: 80px; }
+            #quickbar { bottom: 16px; }
+        }
+        @media (max-width: 640px) {
+            #player-hud { width: min(220px, calc(100vw - 160px)); padding: 8px; }
+            #player-hud .hud-portrait { width: 38px; height: 44px; }
+            #player-hud .hud-meter { height: 6px; }
+            #world-map { top: 78px; right: 8px; width: 150px; }
+            #world-map .map-field { height: 78px; }
+            #quest-panel { top: 110px; left: 8px; width: 154px; padding: 8px; }
+            #quest-panel .quest-secondary { display: none; }
+            #quickbar { bottom: 188px; gap: 3px; padding: 4px; }
+            .quickbar-slot { width: 36px; height: 38px; }
+            #combat-cluster { right: 8px; bottom: 12px; transform: scale(.86); transform-origin: bottom right; }
+        }
         .inventory-window {
             background: linear-gradient(135deg, rgba(32, 27, 22, 0.985), rgba(13, 13, 13, 0.985));
             border: 1px solid rgba(192, 151, 76, 0.78);
@@ -171,44 +239,78 @@
 <body class="relative select-none">
 
     <div id="canvas-container"></div>
+    <div id="boot-status" class="fixed inset-0 z-50 flex items-center justify-center bg-[#080b11] px-6 text-center" role="status" aria-live="polite">
+        <div class="rpg-panel max-w-sm px-6 py-5">
+            <p id="boot-title" class="font-rpg text-sm text-amber-200">Yang-Shin hazırlanıyor</p>
+            <p id="boot-detail" class="mt-2 text-xs leading-relaxed text-stone-400">Köy ve karakter yükleniyor…</p>
+        </div>
+    </div>
     <div id="damage-layer" class="fixed inset-0 pointer-events-none z-30 overflow-hidden"></div>
 
-    <header class="fixed top-2 left-2 right-2 z-20 flex items-start justify-between gap-2 pointer-events-none">
-        <div class="rpg-panel rounded px-2.5 py-2 flex items-center gap-2.5 pointer-events-auto">
-            <div class="relative w-9 h-9 rounded bg-stone-900 border border-amber-700/80 flex items-center justify-center">
-                <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm0 2.18l6 2.25v4.66c0 4.13-2.88 8.03-6 9.08-3.12-1.05-6-4.95-6-9.08V6.43l6-2.25z"/>
-                </svg>
-                <span id="char-level-badge" class="absolute -bottom-1 -right-1 bg-amber-700 text-amber-50 text-[8px] font-bold px-1 rounded-sm border border-amber-300">Lv.1</span>
+    <header class="fixed top-3 left-3 right-3 z-20 flex items-start justify-between gap-2 pointer-events-none">
+        <section id="player-hud" class="hud-frame flex w-[330px] items-center gap-3 p-3 pointer-events-auto">
+            <div class="hud-portrait relative flex h-[54px] w-[48px] shrink-0 items-center justify-center border border-amber-500/50 bg-[radial-gradient(ellipse_at_50%_35%,rgba(181,112,54,.42),rgba(16,18,17,.96)_72%)]">
+                <svg class="h-9 w-9 text-amber-200/90" viewBox="0 0 40 48" fill="none" aria-hidden="true"><path d="M20 2 4 8v12c0 11 6.5 20 16 25 9.5-5 16-14 16-25V8L20 2Z" fill="rgba(110,43,30,.55)" stroke="currentColor" stroke-width="1.4"/><path d="m20 9 3.5 8 6.5 1-5 5 1.2 7L20 27l-6.2 3 1.2-7-5-5 6.5-1L20 9Z" fill="currentColor" opacity=".78"/></svg>
+                <span id="char-level-badge" class="absolute -bottom-1 -right-1 border border-amber-200 bg-[#49351f] px-1 text-[8px] font-bold text-amber-100">1</span>
             </div>
-            <div class="w-28 sm:w-40">
-                <div class="flex items-center justify-between mb-1">
-                    <h1 class="text-[11px] sm:text-xs font-semibold text-stone-100">Savaşçı</h1>
-                    <span id="aura-badge" class="hidden text-[9px] text-amber-300">Hava Kılıcı</span>
+            <div class="min-w-0 flex-1">
+                <div class="mb-2 flex items-end justify-between gap-2">
+                    <div class="min-w-0"><div class="hud-kicker">MAVİ BAYRAK <span class="text-stone-500">/ SAVAŞÇI</span></div><h1 class="truncate font-rpg text-[15px] leading-tight text-stone-100">KaraTuran <span class="text-[10px] text-stone-400">Lv. 1</span></h1></div>
+                    <span id="aura-badge" class="hidden shrink-0 text-[9px] text-amber-300">Hava Kılıcı</span>
                 </div>
-                <div class="hud-bar rounded-sm mb-1"><div class="h-full bg-red-700 w-full"></div></div>
-                <div class="hud-bar rounded-sm"><div class="h-full bg-blue-700 w-11/12"></div></div>
+                <div class="mb-1 flex items-center gap-2"><span class="w-5 text-[8px] font-bold text-red-200">HP</span><div class="hud-meter flex-1"><span id="hp-meter-value" class="bg-gradient-to-r from-red-950 via-red-700 to-rose-500" style="width:100%"></span></div><span id="hp-value" class="w-12 text-right text-[8px] text-stone-300">100 / 100</span></div>
+                <div class="flex items-center gap-2"><span class="w-5 text-[8px] font-bold text-sky-200">MP</span><div class="hud-meter flex-1"><span id="mp-meter-value" class="bg-gradient-to-r from-blue-950 via-sky-700 to-cyan-400" style="width:92%"></span></div><span class="w-12 text-right text-[8px] text-stone-300">380</span></div>
+                <div class="mt-2 flex items-center gap-2"><span class="hud-kicker !text-[8px]">EXP</span><div class="h-[3px] flex-1 overflow-hidden bg-black/70"><span id="exp-meter-value" class="block h-full bg-amber-400" style="width:38%"></span></div><span id="exp-value" class="text-[8px] text-amber-200">38%</span></div>
             </div>
-        </div>
+        </section>
 
-        <div class="rpg-panel rounded p-1 flex items-center gap-1 pointer-events-auto">
-            <button id="inventory-open-btn" onclick="toggleInventory(true)" class="w-8 h-8 rounded-sm bg-stone-900 border border-amber-700/70 text-amber-200 flex items-center justify-center" title="Envanter (I)" aria-label="Envanteri aç">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path d="M5 8h14l1 12H4L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2M9 12h6"/>
-                </svg>
+        <nav class="hud-frame flex items-center gap-1 p-1.5 pointer-events-auto" aria-label="Oyun menüsü">
+            <button id="inventory-open-btn" onclick="toggleInventory(true)" class="flex h-9 w-9 items-center justify-center border border-amber-700/60 bg-black/40 text-amber-200 hover:border-amber-300" title="Envanter (I)" aria-label="Envanteri aç">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 8h14l1 12H4L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2M9 12h6"/></svg>
             </button>
-            <button id="sound-btn" onclick="toggleAudio()" class="w-8 h-8 rounded-sm bg-stone-900 border border-stone-600 text-stone-200 flex items-center justify-center" title="Ses" aria-label="Sesi aç veya kapat" aria-pressed="false">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path id="sound-muted-mark" class="hidden" d="m16 9 5 6m0-6-5 6"/>
-                </svg>
+            <button id="sound-btn" onclick="toggleAudio()" class="flex h-9 w-9 items-center justify-center border border-white/10 bg-black/40 text-stone-200 hover:border-amber-300" title="Ses" aria-label="Sesi aç veya kapat" aria-pressed="false">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path id="sound-muted-mark" class="hidden" d="m16 9 5 6m0-6-5 6"/></svg>
             </button>
-            <button id="toggle-panel-btn" onclick="toggleInspector()" class="w-8 h-8 rounded-sm bg-stone-900 border border-stone-600 text-stone-200 flex items-center justify-center" title="Ekipman" aria-label="Ekipmanı aç" aria-expanded="false">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path d="M8 4h8l1 3 3 2v11H4V9l3-2 1-3Z"/><path d="M8 4c0 3 1.5 5 4 5s4-2 4-5M8 13h8"/>
-                </svg>
+            <button id="toggle-panel-btn" onclick="toggleInspector()" class="flex h-9 w-9 items-center justify-center border border-white/10 bg-black/40 text-stone-200 hover:border-amber-300" title="Karakter ekipmanı" aria-label="Ekipmanı aç" aria-expanded="false">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 4h8l1 3 3 2v11H4V9l3-2 1-3Z"/><path d="M8 4c0 3 1.5 5 4 5s4-2 4-5M8 13h8"/></svg>
             </button>
-        </div>
+        </nav>
     </header>
+
+    <aside id="quest-panel" class="hud-frame fixed left-3 top-[104px] z-20 w-[226px] p-3 pointer-events-none">
+        <div class="mb-2 flex items-center justify-between"><span class="hud-kicker">AKTİF GÖREV</span><span class="text-[8px] text-amber-200/70">01</span></div>
+        <div class="quest-row px-2.5 py-2"><h2 class="font-rpg text-[11px] text-amber-100">Sınır Avı</h2><p class="mt-1 text-[9px] leading-relaxed text-stone-300">Keşif alanlarında 5 yaratık avla.</p></div>
+        <div class="quest-secondary mt-2 flex items-center justify-between text-[8px] text-stone-400"><span>Yaratık avı</span><span id="quest-kill-count" class="text-amber-200">0 / 5</span></div>
+        <div class="quest-secondary mt-1 h-[3px] bg-black/70"><span id="quest-progress" class="block h-full bg-amber-400" style="width:0%"></span></div>
+        <div class="mt-2 flex items-center gap-1.5 text-[8px] text-stone-500"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>Yang-Shin merkez köyü</div>
+    </aside>
+
+    <aside id="monster-target-panel" class="hidden hud-frame fixed right-3 top-[294px] z-20 w-[190px] p-2.5 pointer-events-none">
+        <div class="flex items-center justify-between"><span class="hud-kicker">HEDEF</span><span id="monster-target-level" class="text-[8px] text-stone-400"></span></div>
+        <h2 id="monster-target-name" class="mt-1 font-rpg text-[11px] text-rose-100"></h2>
+        <div class="mt-1.5 hud-meter"><span id="monster-target-hp" class="bg-gradient-to-r from-red-950 via-red-700 to-rose-500" style="width:100%"></span></div>
+        <div class="mt-1 flex justify-between text-[8px] text-stone-400"><span>HP</span><span id="monster-target-hp-text"></span></div>
+    </aside>
+
+    <aside id="world-map" class="hud-frame fixed right-3 top-[76px] z-20 w-[210px] p-2.5 pointer-events-none">
+        <div class="mb-2 flex items-center justify-between"><div><div class="hud-kicker">KRALLIK HARİTASI</div><h2 class="font-rpg text-[11px] text-stone-100">Yang-Shin</h2></div><span class="border border-emerald-500/30 bg-emerald-950/40 px-1.5 py-1 text-[8px] text-emerald-200">CH 1</span></div>
+        <div class="map-field"><span class="map-point" style="left:24%;top:28%"></span><span class="map-point" style="left:75%;top:68%;background:#d7b769"></span><span class="map-player"></span><span class="absolute bottom-1 left-2 z-[2] text-[7px] text-stone-200/80">MERKEZ MEYDAN</span><span class="absolute right-2 top-1 z-[2] text-[8px] text-amber-100">N</span></div>
+        <div class="mt-2 flex items-center justify-between text-[8px] text-stone-400"><span><i class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-rose-400"></i><span id="map-current-region">Merkez Meydan</span></span><span id="map-threat-count">0 tehdit</span></div>
+    </aside>
+
+    <div id="exploration-toast" class="hidden fixed left-1/2 top-[132px] z-40 -translate-x-1/2 border border-amber-500/60 bg-black/85 px-5 py-3 text-center shadow-xl" role="status" aria-live="polite">
+        <p class="hud-kicker">YENİ BÖLGE KEŞFEDİLDİ</p><p id="exploration-toast-title" class="mt-1 font-rpg text-sm text-amber-100"></p><p id="exploration-toast-detail" class="mt-1 text-[9px] text-stone-300"></p>
+    </div>
+
+    <nav id="quickbar" class="hud-frame fixed bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 p-1.5" aria-label="Hızlı erişim ve yetenekler">
+        <button class="quickbar-slot text-xl text-red-300" onclick="useQuickItem('potion-red')" title="Kırmızı İksir (Q)"><kbd>Q</kbd><span>🧪</span></button>
+        <button class="quickbar-slot text-xl text-sky-300" onclick="useQuickItem('potion-blue')" title="Mavi İksir (E)"><kbd>E</kbd><span>🧪</span></button>
+        <span class="mx-0.5 h-8 w-px bg-amber-200/20"></span>
+        <button class="quickbar-slot text-amber-300" onclick="triggerSkill('aura')" title="Hava Kılıcı (1)"><kbd>1</kbd><span>✦</span></button>
+        <button class="quickbar-slot text-cyan-300" onclick="triggerSkill('spin')" title="Çevirme (2)"><kbd>2</kbd><span>◉</span></button>
+        <button class="quickbar-slot text-orange-300" onclick="triggerSkill('triple')" title="Üç Yönlü (3)"><kbd>3</kbd><span>ϟ</span></button>
+        <button class="quickbar-slot text-violet-300" onclick="triggerSkill('dash')" title="Hamle (4)"><kbd>4</kbd><span>➜</span></button>
+    </nav>
 
     <div id="inventory-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onclick="if (event.target === this) toggleInventory(false)">
         <section id="inventory-window" class="inventory-window w-full max-w-5xl max-h-[calc(100vh-32px)] overflow-hidden text-stone-200" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
@@ -328,7 +430,7 @@
         <div id="joystick-knob"></div>
     </div>
 
-    <div class="fixed bottom-6 right-20 sm:bottom-8 sm:right-16 z-30 w-44 h-44 sm:w-52 sm:h-52 pointer-events-none select-none">
+    <div id="combat-cluster" class="fixed bottom-6 right-20 sm:bottom-8 sm:right-16 z-30 w-44 h-44 sm:w-52 sm:h-52 pointer-events-none select-none">
         <button id="btn-skill-1" onpointerdown="triggerSkill('aura', event)" aria-label="Hava Kılıcı" title="Hava Kılıcı" class="skill-btn pointer-events-auto absolute bottom-0 right-24 sm:right-28 w-11 h-11 sm:w-14 sm:h-14 rounded-full flex flex-col items-center justify-center shadow-md">
             <span class="absolute -top-1 -right-1 bg-slate-950 border border-amber-400 text-[9px] font-bold text-amber-300 w-4 h-4 rounded-full flex items-center justify-center">1</span>
             <svg class="w-4 h-4 sm:w-5 sm:h-5 text-orange-400 drop-shadow" viewBox="0 0 24 24" fill="currentColor">
@@ -386,6 +488,7 @@
         let weaponFlameSprites = [];
         let groundMesh, playerTargetRing, metinStoneGroup, metinRockMesh;
         let villageWorldGroup, villageEffectsGroup, villagePavingMeshes = [], villageLanternLights = [], villageWaterMeshes = [], villageVillagers = [], villageGrassMeshes = [], villageSmokePuffs = [], villageCollisionAreas = [];
+        let villageMonsters = [], explorationRegions = [], discoveredRegions = new Set(), worldSimulationTime = 0;
         let directionalSunLight;
         let reducedGraphics = false;
         const performanceState = { sampleTime: 0, sampleFrames: 0, lowFrameWindows: 0, lastFrameTime: 0, reduced: false };
@@ -424,7 +527,9 @@
             armorTheme: 'monk',     // Lv.1 Keşiş Plaka Zırh +0
             helmetMode: 'none',     // Lv.1 Başlıksız (Realistic Human Face & Hair visible)
             runeTimer: 0,
-            vortexTimer: 0
+            vortexTimer: 0,
+            monsterKills: 0,
+            playerExp: 38
         };
 
         const camState = {
@@ -460,10 +565,17 @@
         }
 
         function isVillagePositionBlocked(position) {
-            return villageCollisionAreas.some(area => {
+            const blockedByWorld = villageCollisionAreas.some(area => {
                 const dx = position.x - area.x;
                 const dz = position.z - area.z;
                 return dx * dx + dz * dz < area.radius * area.radius;
+            });
+            if (blockedByWorld) return true;
+            return villageMonsters.some(monster => {
+                if (!monster.visible || monster.userData.mode === 'dead') return false;
+                const dx = position.x - monster.position.x;
+                const dz = position.z - monster.position.z;
+                return dx * dx + dz * dz < 0.72 * 0.72;
             });
         }
 
@@ -635,6 +747,11 @@
             return inventoryItems.find(item => item.id === id);
         }
 
+        function useQuickItem(itemId) {
+            const item = getInventoryItem(itemId);
+            if (item) selectInventoryItem(item);
+        }
+
         function renderEquipment() {
             ['left', 'right'].forEach(side => {
                 const container = document.getElementById(`equipment-${side}`);
@@ -710,9 +827,8 @@
                 if (item.effect === 'mp') inventoryMp = Math.min(100, inventoryMp + 25);
                 if (item.count > 1) item.count--;
                 else inventoryItems.splice(inventoryItems.indexOf(item), 1);
-                const bars = document.querySelectorAll('.hud-bar > div');
-                if (bars[0]) bars[0].style.width = `${inventoryHp}%`;
-                if (bars[1]) bars[1].style.width = `${inventoryMp}%`;
+                document.getElementById('hp-meter-value').style.width = `${inventoryHp}%`;
+                document.getElementById('mp-meter-value').style.width = `${inventoryMp}%`;
                 message.textContent = `${item.name} kullanıldı.`;
                 renderInventory();
             } else {
@@ -1374,6 +1490,7 @@
             createSkillVFXSystems(textures);
             createPlusNineSparkles(textures.sparkTexture);
             createMetinStoneTarget();
+            createVillageMonsters();
             loadUploadedGameAssets();
 
             setupInteractionEvents();
@@ -1617,6 +1734,7 @@
         }
 
         function animateVillage(elapsedTime) {
+            updateVillageMonsters(elapsedTime);
             villageLanternLights.forEach((light, index) => {
                 light.intensity = 1.05 + Math.sin(elapsedTime * 3.4 + index * 1.7) * 0.14 + Math.sin(elapsedTime * 7.1 + index) * 0.05;
             });
@@ -1628,6 +1746,32 @@
                 npc.position.y = npc.userData.baseY + Math.sin(phase * 0.8) * 0.018;
                 npc.rotation.y = npc.userData.baseFacing + Math.sin(phase * 0.32) * npc.userData.idleTurn;
                 npc.rotation.z = Math.sin(phase * 0.66) * npc.userData.idleLean;
+                if (npc.userData.activity && npc.userData.animatedArms?.length && npc.userData.animatedHead?.rotation) {
+                    const cycle = (elapsedTime * npc.userData.workSpeed + npc.userData.idlePhase / (Math.PI * 2)) % 1;
+                    const lift = cycle < 0.34 ? cycle / 0.34 : 1 - (cycle - 0.34) / 0.66;
+                    const smoothLift = lift * lift * (3 - 2 * lift);
+                    const arms = npc.userData.animatedArms;
+                    if (npc.userData.activity === 'woodcutter') {
+                        arms[1].rotation.z = -0.18 - smoothLift * 1.7;
+                        arms[0].rotation.z = 0.2 + smoothLift * 0.64;
+                        npc.rotation.x = 0.025 + smoothLift * 0.13;
+                        npc.userData.animatedHead.rotation.x = 0.06 + smoothLift * 0.2;
+                    } else if (npc.userData.activity === 'blacksmith') {
+                        arms[1].rotation.z = -0.22 - smoothLift * 1.38;
+                        arms[0].rotation.z = 0.16 + smoothLift * 0.18;
+                        npc.rotation.x = 0.015 + smoothLift * 0.065;
+                        npc.userData.animatedHead.rotation.x = 0.04 + smoothLift * 0.1;
+                    } else if (npc.userData.activity === 'merchant') {
+                        arms[1].rotation.z = -0.12 - Math.max(0, Math.sin(phase * 1.8)) * 0.68;
+                        arms[0].rotation.z = 0.08 + Math.sin(phase * 0.9) * 0.12;
+                        npc.userData.animatedHead.rotation.y = Math.sin(phase * 0.42) * 0.18;
+                    } else if (npc.userData.activity === 'herbalist') {
+                        arms[1].rotation.z = -0.35 - Math.sin(phase * 1.15) * 0.18;
+                        arms[0].rotation.z = 0.34 + Math.cos(phase * 1.15) * 0.18;
+                        npc.rotation.x = 0.035 + Math.sin(phase * 1.15) * 0.025;
+                        npc.userData.animatedHead.rotation.x = 0.12 + Math.sin(phase * 1.15) * 0.04;
+                    }
+                }
             });
             villageSmokePuffs.forEach(puff => {
                 const progress = (elapsedTime * 0.12 + puff.phase) % 1;
@@ -1643,7 +1787,7 @@
         }
 
         function createSkinTextures() {
-            const size = 1024;
+            const size = reducedGraphics ? 512 : 1024;
             function createNoiseTile(resolution, seed) {
                 const values = new Float32Array(resolution * resolution);
                 let value = seed;
@@ -1780,16 +1924,17 @@
 
         function getVillageTerrainHeight(x, z) {
             if (Math.abs(x) < 4.4 || Math.abs(z) < 3.8) return 0;
-            if (([19, 27].some(road => Math.abs(Math.abs(x) - road) < 2.9)
-                && Math.abs(z) < 56)
-                || ([19, 27, 35].some(road => Math.abs(Math.abs(z) - road) < 2.8)
-                    && Math.abs(x) < 52)) return 0;
+            const roadDistances = [];
+            if (Math.abs(z) < 56) [19, 27].forEach(road => roadDistances.push(Math.abs(Math.abs(x) - road)));
+            if (Math.abs(x) < 52) [19, 27, 35].forEach(road => roadDistances.push(Math.abs(Math.abs(z) - road)));
             const distance = Math.hypot(x, z);
             const outskirts = THREE.MathUtils.smoothstep(distance, 42, 82);
             const rolling = Math.sin(x * 0.075 + z * 0.028) * 0.52
                 + Math.cos(z * 0.09 - x * 0.035) * 0.38
                 + Math.sin((x + z) * 0.13) * 0.16;
-            return outskirts * (0.24 + rolling * 1.35);
+            const nearestRoad = roadDistances.length ? Math.min(...roadDistances) : Infinity;
+            const roadBlend = THREE.MathUtils.smoothstep(nearestRoad, 2.1, 3.4);
+            return outskirts * (0.24 + rolling * 1.35) * roadBlend;
         }
 
         function buildVillageGrassTexture() {
@@ -2458,18 +2603,67 @@
                 return house;
             };
 
-            const makeTree = (x, z, size = 1) => {
+            const treeTrunkGeometry = new THREE.CylinderGeometry(0.24, 0.46, 3.2, 9, 3);
+            const treeRootGeometry = new THREE.CylinderGeometry(0.46, 0.74, 0.42, 9, 1);
+            const treeCrownGeometry = new THREE.IcosahedronGeometry(1, 2);
+            const pineCrownGeometry = new THREE.ConeGeometry(1, 1.8, 9, 2);
+            const makeTree = (x, z, size = 1, style = 'broadleaf') => {
                 const tree = new THREE.Group();
                 tree.position.set(x, getVillageTerrainHeight(x, z), z);
                 tree.scale.setScalar(size);
                 villageWorldGroup.add(tree);
-                addMesh(tree, new THREE.CylinderGeometry(0.24, 0.46, 3.2, 9), mats.timberLight, [0, 1.6, 0], null);
-                const crownGeo = new THREE.IcosahedronGeometry(1, 2);
-                [[0, 3.1, 0, 1.65], [-0.65, 4.0, 0.15, 1.35], [0.55, 4.25, -0.2, 1.25]].forEach((item, index) => {
-                    addMesh(tree, crownGeo, mats.leaf[(Math.floor(x * 7 + z * 11 + index) + 12) % mats.leaf.length], [item[0], item[1], item[2]], [item[3], item[3] * 0.92, item[3]]);
-                });
+                addMesh(tree, treeRootGeometry, mats.timber, [0, 0.21, 0], [1, 1, 1]);
+                addMesh(tree, treeTrunkGeometry, mats.timberLight, [0, 1.72, 0], null);
+                if (style === 'pine') {
+                    [[2.95, 1.48], [3.72, 1.12], [4.38, 0.76]].forEach(([y, radius], index) => {
+                        addMesh(tree, pineCrownGeometry, mats.leaf[(index + Math.floor(x + z) + 12) % mats.leaf.length], [0, y, 0], [radius, 1, radius]);
+                    });
+                } else {
+                    [[0, 3.1, 0, 1.65], [-0.65, 4.0, 0.15, 1.35], [0.55, 4.25, -0.2, 1.25], [0.1, 4.85, 0.1, 0.88]].forEach((item, index) => {
+                        addMesh(tree, treeCrownGeometry, mats.leaf[(Math.floor(x * 7 + z * 11 + index) + 12) % mats.leaf.length], [item[0], item[1], item[2]], [item[3], item[3] * 0.92, item[3]]);
+                    });
+                }
                 return tree;
             };
+
+            const scatterRockGeometry = new THREE.IcosahedronGeometry(0.5, 1);
+            const scatterRockMaterial = mats.stone.clone();
+            scatterRockMaterial.color.set(0xffffff);
+            const scatterRockCapacity = reducedGraphics ? 150 : 360;
+            const scatteredRocks = new THREE.InstancedMesh(scatterRockGeometry, scatterRockMaterial, scatterRockCapacity);
+            scatteredRocks.name = 'VillageRockClusters';
+            scatteredRocks.castShadow = false;
+            scatteredRocks.receiveShadow = false;
+            const rockTransform = new THREE.Object3D();
+            const rockColor = new THREE.Color();
+            let rockCount = 0;
+            let rockAttempts = 0;
+            while (rockCount < scatterRockCapacity && rockAttempts < scatterRockCapacity * 5) {
+                rockAttempts++;
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 43 + Math.random() * 48;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const onRoad = ([19, 27].some(road => Math.abs(Math.abs(x) - road) < 3.5 && Math.abs(z) < 58)
+                    || [19, 27, 35].some(road => Math.abs(Math.abs(z) - road) < 3.2 && Math.abs(x) < 52));
+                if (onRoad || (z < -35 && Math.abs(x) < 14)) continue;
+                if (villageCollisionAreas.some(area => Math.hypot(x - area.x, z - area.z) < area.radius + 4)) continue;
+                if (Math.abs(x + 43) < 5.5) continue;
+
+                const scale = 0.22 + Math.random() * 0.72;
+                rockTransform.position.set(x, getVillageTerrainHeight(x, z) + scale * 0.22, z);
+                rockTransform.rotation.set(Math.random() * 0.28, Math.random() * Math.PI * 2, Math.random() * 0.28);
+                rockTransform.scale.set(scale * (0.8 + Math.random() * 0.65), scale * (0.55 + Math.random() * 0.55), scale * (0.75 + Math.random() * 0.6));
+                rockTransform.updateMatrix();
+                scatteredRocks.setMatrixAt(rockCount, rockTransform.matrix);
+                rockColor.setHSL(0.10 + Math.random() * 0.035, 0.12 + Math.random() * 0.1, 0.32 + Math.random() * 0.18);
+                scatteredRocks.setColorAt(rockCount, rockColor);
+                rockCount++;
+            }
+            scatteredRocks.count = rockCount;
+            scatteredRocks.instanceMatrix.needsUpdate = true;
+            if (scatteredRocks.instanceColor) scatteredRocks.instanceColor.needsUpdate = true;
+            villageWorldGroup.add(scatteredRocks);
 
             const makeLantern = (x, z) => {
                 const group = new THREE.Group();
@@ -2542,6 +2736,7 @@
             const batchVillagerMeshes = npc => {
                 npc.updateMatrixWorld(true);
                 const sourceMeshes = [];
+                const animatedArms = new Set(npc.userData.animatedArms || []);
                 npc.traverse(node => {
                     if (!node.isMesh) return;
                     const batchClass = node.material.userData.npcBatchClass;
@@ -2558,12 +2753,14 @@
                     }
                     node.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
                     node.material = batchMaterial;
-                    sourceMeshes.push(node);
+                    let ancestor = node.parent;
+                    while (ancestor && ancestor !== npc && !animatedArms.has(ancestor)) ancestor = ancestor.parent;
+                    if (!animatedArms.has(ancestor)) sourceMeshes.push(node);
                 });
                 mergeVillageMeshes(sourceMeshes, npc, npc, new Set([boxGeo]));
             };
 
-            const makeVillager = (x, z, tunicColor, facing = 0, name = '', profession = 'villager') => {
+            const makeVillager = (x, z, tunicColor, facing = 0, name = '', profession = 'villager', activity = '') => {
                 const npc = new THREE.Group();
                 npc.position.set(x, 0, z);
                 npc.rotation.y = facing;
@@ -2637,6 +2834,30 @@
                     armPivots.push(pivot);
                 });
 
+                if (activity && (!reducedGraphics || activity === 'woodcutter' || activity === 'blacksmith')) {
+                    const toolHand = new THREE.Group();
+                    toolHand.position.set(0.075, -0.87, 0.035);
+                    armPivots[1].add(toolHand);
+                    const isAxe = activity === 'woodcutter';
+                    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.035, isAxe ? 0.78 : 0.62, 8), bootLeather);
+                    handle.position.y = isAxe ? 0.34 : 0.28;
+                    handle.castShadow = false;
+                    toolHand.add(handle);
+                    const head = new THREE.Mesh(
+                        isAxe ? new THREE.BoxGeometry(0.3, 0.17, 0.1) : new THREE.BoxGeometry(0.2, 0.15, 0.16),
+                        mats.iron
+                    );
+                    head.position.set(isAxe ? 0.12 : 0, isAxe ? 0.67 : 0.55, 0);
+                    head.castShadow = false;
+                    toolHand.add(head);
+                    npc.userData.activity = activity;
+                    npc.userData.animatedArms = armPivots;
+                    npc.userData.workSpeed = activity === 'woodcutter' ? 0.62 : activity === 'blacksmith' ? 1.05 : 0.38;
+                } else {
+                    npc.userData.activity = '';
+                    npc.userData.animatedArms = [];
+                }
+
                 if (profession === 'merchant' || profession === 'herbalist') {
                     const apronColor = profession === 'herbalist' ? 0xb29a62 : 0x514638;
                     const apron = new THREE.MeshStandardMaterial({ color: apronColor, map: clothTexture, bumpMap: clothTexture, roughness: 0.98 });
@@ -2669,6 +2890,13 @@
                 });
                 addMesh(head, new THREE.SphereGeometry(0.037, 10, 8), skin, [0, 0.005, 0.172], [0.72, 0.95, 0.9]);
                 addMesh(head, new THREE.SphereGeometry(0.018, 8, 6), dark, [0, -0.072, 0.148], [1.5, 0.35, 0.5]);
+                if (activity === 'woodcutter' || activity === 'blacksmith') {
+                    addMesh(head, new THREE.SphereGeometry(0.12, 14, 9), hair, [0, -0.085, 0.105], [0.88, 0.78, 0.72]);
+                } else if (activity === 'merchant') {
+                    [-1, 1].forEach(side => {
+                        addMesh(head, new THREE.SphereGeometry(0.035, 8, 6), hair, [side * 0.036, -0.025, 0.174], [1.2, 0.58, 0.7]);
+                    });
+                }
                 addMesh(head, new THREE.SphereGeometry(0.185, 18, 12), hair, [0, 0.132, -0.014], [1.02, 0.68, 1.02]);
                 addMesh(head, new THREE.SphereGeometry(0.13, 12, 9), hair, [0, -0.045, -0.095], [1.13, 1.0, 0.72]);
 
@@ -3044,7 +3272,7 @@
             villageWorldGroup.add(gateSign);
             addPaving(13, 18, 0, -43);
 
-            makeVillager(-12.8, 4.1, 0x526347, 0.4, 'Pazarcı Yunus', 'merchant');
+            makeVillager(-12.8, 4.1, 0x526347, 0.4, 'Pazarcı Yunus', 'merchant', 'merchant');
             makeVillager(12.5, 4.1, 0x8b4e32, -0.4, 'Avcı Şahin', 'traveler');
             makeVillager(-9.4, 4.8, 0x6a4750, 1.3, 'Otçu Narin', 'herbalist');
             makeVillager(4.8, -11.6, 0x394f61, 2.3, 'Gezgin', 'traveler');
@@ -3052,16 +3280,16 @@
             makeVillager(-19.2, 1.4, 0x60453a, 1.2, 'Nöbetçi', 'guard');
             makeVillager(-13.4, 6.1, 0x7b5235, -0.2, 'Terzi Lale', 'merchant');
             makeVillager(13.3, 6.2, 0x53604a, 0.35, 'Avcı Baran', 'traveler');
-            makeVillager(-11.6, -2.1, 0x655241, 1.8, 'Şifacı Ece', 'herbalist');
+            makeVillager(-11.6, -2.1, 0x655241, 1.8, 'Şifacı Ece', 'herbalist', 'herbalist');
             makeVillager(-3.6, 8.5, 0x46545c, 2.7, 'Yolcu Cem', 'traveler');
             makeVillager(5.1, 9.1, 0x73513c, -2.5, 'Köylü Aylin', 'villager');
             makeVillager(24.2, -4.2, 0x4d5847, 0.6, 'Çiftçi Murat', 'villager');
-            makeVillager(-23.7, 3.6, 0x766347, -0.8, 'Oduncu Ali', 'villager');
+            makeVillager(-30.8, -19.1, 0x766347, 0.8, 'Oduncu Ali', 'villager', 'woodcutter');
             makeVillager(2.5, -36.1, 0x374958, Math.PI, 'Kapı Muhafızı', 'guard');
             makeVillager(-38.2, -15, 0x6d4934, 0.4, 'Han Yolcusu', 'traveler');
             makeVillager(38, 15, 0x645344, -2.1, 'Köylü Derya', 'villager');
             makeVillager(-3.8, 16.5, 0x724d3c, 0.9, 'Marangoz Arda', 'villager');
-            makeVillager(3.6, 17.2, 0x43586a, -0.9, 'Demirci çırağı', 'villager');
+            makeVillager(-18.8, -11.4, 0x43586a, Math.PI, 'Demirci çırağı', 'merchant', 'blacksmith');
             makeVillager(-37.5, 36, 0x526146, -0.5, 'Tarla Bekçisi', 'guard');
             makeVillager(38, -36, 0x78694a, 2.4, 'Köy Sakini', 'villager');
 
@@ -3121,7 +3349,9 @@
                 [-43, -31, 31, 43].forEach(z => makeLantern(x, z));
             });
             [-54, -42, 42, 54].forEach(x => {
-                [-48, -37, 37, 48].forEach(z => makeTree(x + (Math.random() - 0.5) * 3, z + (Math.random() - 0.5) * 3, 0.82 + Math.random() * 0.55));
+                [-48, -37, 37, 48].forEach((z, index) => {
+                    makeTree(x + (Math.random() - 0.5) * 3, z + (Math.random() - 0.5) * 3, 0.82 + Math.random() * 0.55, index % 3 === 0 ? 'pine' : 'broadleaf');
+                });
             });
             for (let i = 0; i < 24; i++) {
                 const angle = (i / 24) * Math.PI * 2;
@@ -3129,7 +3359,25 @@
                 const x = Math.cos(angle) * radius;
                 const z = Math.sin(angle) * radius;
                 if (z < -35 && Math.abs(x) < 13) continue;
-                makeTree(x, z, 0.8 + (i % 4) * 0.12);
+                makeTree(x, z, 0.8 + (i % 4) * 0.12, i % 3 === 0 ? 'pine' : 'broadleaf');
+            }
+
+            let groveCount = 0;
+            let groveAttempts = 0;
+            const groveLimit = reducedGraphics ? 10 : 28;
+            while (groveCount < groveLimit && groveAttempts < groveLimit * 5) {
+                groveAttempts++;
+                const angle = Math.random() * Math.PI * 2;
+                const radius = 51 + Math.random() * 14;
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const onRoad = ([19, 27].some(road => Math.abs(Math.abs(x) - road) < 4 && Math.abs(z) < 58)
+                    || [19, 27, 35].some(road => Math.abs(Math.abs(z) - road) < 4 && Math.abs(x) < 52));
+                if (onRoad || (z < -35 && Math.abs(x) < 14)) continue;
+                if (villageCollisionAreas.some(area => Math.hypot(x - area.x, z - area.z) < area.radius + 5)) continue;
+                const size = 0.72 + Math.random() * 0.56;
+                makeTree(x, z, size, Math.random() < 0.38 ? 'pine' : 'broadleaf');
+                groveCount++;
             }
 
             const fenceMat = mats.timberLight;
@@ -3178,7 +3426,7 @@
             const dynamicGroups = [...villageVillagers, villageEffectsGroup];
             const staticMeshes = [];
             villageWorldGroup.traverse(mesh => {
-                if (!mesh.isMesh || Array.isArray(mesh.material)) return;
+                if (!mesh.isMesh || mesh.isInstancedMesh || Array.isArray(mesh.material)) return;
                 let ancestor = mesh;
                 while (ancestor && ancestor !== villageWorldGroup && !dynamicGroups.includes(ancestor)) ancestor = ancestor.parent;
                 if (dynamicGroups.includes(ancestor)) return;
@@ -3348,6 +3596,23 @@
                     const navel = Math.exp(-Math.pow(x / 0.012, 2) - Math.pow((t - 0.19) / 0.018, 2));
                     const navelRim = Math.exp(-Math.pow(x / 0.025, 2) - Math.pow((t - 0.19) / 0.032, 2));
                     z -= frontWeight * navel * 0.003 + frontWeight * navelRim * 0.001;
+                }
+
+                const backWeight = THREE.MathUtils.smoothstep(-nz, 0.25, 0.92);
+                if (backWeight > 0) {
+                    const shoulderBlades = Math.exp(-Math.pow((t - 0.75) / 0.14, 2))
+                        * Math.exp(-Math.pow((Math.abs(x) - 0.105) / 0.062, 2));
+                    const trapezius = Math.exp(-Math.pow((t - 0.86) / 0.15, 2))
+                        * Math.exp(-Math.pow((Math.abs(x) - 0.105) / 0.085, 2));
+                    const latissimus = Math.exp(-Math.pow((t - 0.49) / 0.22, 2))
+                        * Math.exp(-Math.pow((Math.abs(x) - 0.177) / 0.058, 2));
+                    const erectorSpinae = Math.exp(-Math.pow((t - 0.48) / 0.26, 2))
+                        * Math.exp(-Math.pow((Math.abs(x) - 0.066) / 0.022, 2));
+                    const spineGroove = Math.exp(-Math.pow(x / 0.016, 2))
+                        * THREE.MathUtils.smoothstep(t, 0.24, 0.42)
+                        * (1 - THREE.MathUtils.smoothstep(t, 0.75, 0.9));
+                    z -= backWeight * (shoulderBlades * 0.008 + trapezius * 0.012 + latissimus * 0.013 + erectorSpinae * 0.006);
+                    z += backWeight * spineGroove * 0.0025;
                 }
 
                 pos.setXYZ(i, x, vy, z);
@@ -5707,6 +5972,420 @@
             villageCollisionAreas.push({ x: metinStoneGroup.position.x, z: metinStoneGroup.position.z, radius: 1.8 });
         }
 
+        function createVillageMonsters() {
+            villageMonsters = [];
+            discoveredRegions = new Set();
+            const sphereGeometry = new THREE.SphereGeometry(1, 12, 9);
+            const stoneGeometry = new THREE.DodecahedronGeometry(1, 1);
+            const legGeometry = new THREE.CylinderGeometry(0.12, 0.15, 0.44, 8, 2);
+            const footGeometry = new THREE.SphereGeometry(1, 9, 7);
+            const clawGeometry = new THREE.ConeGeometry(0.045, 0.18, 6);
+            const noseMaterial = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.76 });
+            const eyeMaterials = {
+                wolf: new THREE.MeshStandardMaterial({ color: 0xf1c66b, emissive: 0x5a320e, emissiveIntensity: 0.42, roughness: 0.3 }),
+                bear: new THREE.MeshStandardMaterial({ color: 0xb8d66b, emissive: 0x435b17, emissiveIntensity: 0.36, roughness: 0.3 }),
+                golem: new THREE.MeshStandardMaterial({ color: 0xff8c3c, emissive: 0xff4c0b, emissiveIntensity: 1.5, roughness: 0.26 })
+            };
+            const materialsByType = {
+                wolf: {
+                    hide: new THREE.MeshStandardMaterial({ color: 0x77756e, roughness: 0.96 }),
+                    light: new THREE.MeshStandardMaterial({ color: 0xb7aa8e, roughness: 0.98 }),
+                    dark: new THREE.MeshStandardMaterial({ color: 0x403e3a, roughness: 0.94 })
+                },
+                bear: {
+                    hide: new THREE.MeshStandardMaterial({ color: 0x53372a, roughness: 0.96 }),
+                    light: new THREE.MeshStandardMaterial({ color: 0x846047, roughness: 0.98 }),
+                    dark: new THREE.MeshStandardMaterial({ color: 0x2b201c, roughness: 0.94 })
+                },
+                golem: {
+                    hide: new THREE.MeshStandardMaterial({ color: 0x5d625d, roughness: 0.99, flatShading: true }),
+                    light: new THREE.MeshStandardMaterial({ color: 0x87877b, roughness: 0.98, flatShading: true }),
+                    dark: new THREE.MeshStandardMaterial({ color: 0x313b38, roughness: 0.94, flatShading: true })
+                }
+            };
+            const definitions = {
+                wolf: { name: 'Aç Kurt', level: 5, hp: 72, speed: 2.05, damage: 5, aggro: 11.5, reach: 1.55, attackRate: 1.35, scale: 0.88, xp: 3 },
+                bear: { name: 'Kara Ayı', level: 12, hp: 148, speed: 1.12, damage: 11, aggro: 9.5, reach: 1.9, attackRate: 1.75, scale: 1.12, xp: 6 },
+                golem: { name: 'Taş Muhafız', level: 18, hp: 235, speed: 0.78, damage: 16, aggro: 10.5, reach: 2.15, attackRate: 2.1, scale: 1.18, xp: 10 }
+            };
+            const labelMaterials = {};
+
+            function makeLabel(type) {
+                if (labelMaterials[type]) return labelMaterials[type];
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 64;
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'rgba(10, 12, 12, 0.82)';
+                context.beginPath();
+                context.roundRect(2, 2, 316, 60, 12);
+                context.fill();
+                context.strokeStyle = type === 'golem' ? 'rgba(231, 113, 63, .84)' : 'rgba(208, 180, 126, .72)';
+                context.lineWidth = 3;
+                context.stroke();
+                context.fillStyle = '#f1e6cd';
+                context.font = 'bold 29px Georgia';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(definitions[type].name, 160, 31);
+                labelMaterials[type] = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false });
+                return labelMaterials[type];
+            }
+
+            function addMonsterMesh(parent, geometry, material, position, scale) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(position[0], position[1], position[2]);
+                if (scale) mesh.scale.set(scale[0], scale[1], scale[2]);
+                mesh.castShadow = !reducedGraphics;
+                mesh.receiveShadow = false;
+                parent.add(mesh);
+                return mesh;
+            }
+
+            function addMonster(type, region, position, index) {
+                const definition = definitions[type];
+                const material = materialsByType[type];
+                const root = new THREE.Group();
+                const body = new THREE.Group();
+                root.add(body);
+                root.position.set(position[0], getVillageTerrainHeight(position[0], position[1]), position[1]);
+                root.scale.setScalar(definition.scale);
+                root.visible = false;
+                scene.add(root);
+
+                const legs = [];
+                const arms = [];
+                let head;
+                let tail;
+                if (type === 'golem') {
+                    addMonsterMesh(body, stoneGeometry, material.hide, [0, 1.26, 0], [0.62, 0.76, 0.46]);
+                    addMonsterMesh(body, stoneGeometry, material.light, [0, 1.05, 0.12], [0.43, 0.48, 0.38]);
+                    head = new THREE.Group();
+                    head.position.set(0, 1.98, 0.04);
+                    body.add(head);
+                    addMonsterMesh(head, stoneGeometry, material.light, [0, 0, 0], [0.38, 0.34, 0.34]);
+                    [-1, 1].forEach(side => {
+                        addMonsterMesh(head, sphereGeometry, eyeMaterials.golem, [side * 0.14, 0.035, 0.3], [0.052, 0.044, 0.025]);
+                        const arm = new THREE.Group();
+                        arm.position.set(side * 0.62, 1.65, 0.02);
+                        body.add(arm);
+                        addMonsterMesh(arm, stoneGeometry, material.hide, [0, -0.32, 0], [0.24, 0.43, 0.25]);
+                        addMonsterMesh(arm, stoneGeometry, material.light, [0, -0.73, 0.04], [0.28, 0.26, 0.29]);
+                        arms.push(arm);
+                        const leg = new THREE.Group();
+                        leg.position.set(side * 0.28, 0.72, 0);
+                        body.add(leg);
+                        addMonsterMesh(leg, stoneGeometry, material.hide, [0, -0.28, 0], [0.24, 0.39, 0.27]);
+                        addMonsterMesh(leg, stoneGeometry, material.light, [0, -0.56, 0.12], [0.29, 0.19, 0.38]);
+                        legs.push(leg);
+                    });
+                    [-1, 1].forEach(side => addMonsterMesh(body, stoneGeometry, material.dark, [side * 0.48, 1.76, -0.04], [0.31, 0.3, 0.34]));
+                } else {
+                    const isBear = type === 'bear';
+                    addMonsterMesh(body, sphereGeometry, material.hide, [0, 0.76, -0.02], isBear ? [0.55, 0.5, 0.72] : [0.4, 0.38, 0.69]);
+                    addMonsterMesh(body, sphereGeometry, material.light, [0, 0.75, 0.29], isBear ? [0.43, 0.4, 0.42] : [0.31, 0.29, 0.42]);
+                    head = new THREE.Group();
+                    head.position.set(0, 0.95, 0.5);
+                    body.add(head);
+                    addMonsterMesh(head, sphereGeometry, material.hide, [0, 0, 0.06], isBear ? [0.34, 0.34, 0.34] : [0.29, 0.27, 0.33]);
+                    addMonsterMesh(head, sphereGeometry, material.light, [0, -0.12, 0.29], isBear ? [0.21, 0.18, 0.25] : [0.18, 0.13, 0.27]);
+                    addMonsterMesh(head, sphereGeometry, noseMaterial, [0, -0.09, 0.51], [0.09, 0.065, 0.07]);
+                    [-1, 1].forEach(side => {
+                        addMonsterMesh(head, sphereGeometry, eyeMaterials[type], [side * 0.17, 0.055, 0.31], [0.035, 0.035, 0.022]);
+                        addMonsterMesh(head, new THREE.ConeGeometry(isBear ? 0.09 : 0.105, isBear ? 0.18 : 0.24, 7), material.dark, [side * (isBear ? 0.23 : 0.205), isBear ? 0.24 : 0.25, -0.015], null);
+                    });
+                    tail = new THREE.Group();
+                    tail.position.set(0, 0.84, -0.63);
+                    body.add(tail);
+                    const tailMesh = addMonsterMesh(tail, sphereGeometry, material.hide, [0, 0, -0.2], isBear ? [0.13, 0.14, 0.28] : [0.11, 0.12, 0.37]);
+                    tailMesh.rotation.x = -0.38;
+
+                    [-1, 1].forEach(side => {
+                        [0.42, -0.42].forEach((z, legIndex) => {
+                            const leg = new THREE.Group();
+                            leg.position.set(side * (isBear ? 0.34 : 0.25), 0.58, z);
+                            body.add(leg);
+                            const thickness = isBear ? 0.2 : 0.135;
+                            addMonsterMesh(leg, legGeometry, material.hide, [0, -0.19, 0], [thickness / 0.135, isBear ? 1.12 : 0.9, thickness / 0.15]);
+                            addMonsterMesh(leg, footGeometry, material.dark, [0, -0.39, 0.065], [thickness * 1.12, 0.12, thickness * 1.5]);
+                            if (isBear && legIndex === 0) {
+                                for (let claw = -1; claw <= 1; claw++) {
+                                    const tip = addMonsterMesh(leg, clawGeometry, material.light, [claw * 0.075, -0.42, 0.18], [0.48, 0.7, 0.48]);
+                                    tip.rotation.x = -Math.PI / 2;
+                                }
+                            }
+                            legs.push(leg);
+                        });
+                    });
+                }
+
+                const targetRing = new THREE.Mesh(
+                    new THREE.RingGeometry(0.68, 0.82, 36),
+                    new THREE.MeshBasicMaterial({ color: type === 'golem' ? 0xef784b : 0xc43b32, side: THREE.DoubleSide, transparent: true, opacity: 0.78, depthWrite: false })
+                );
+                targetRing.rotation.x = -Math.PI / 2;
+                targetRing.position.y = 0.035;
+                targetRing.visible = false;
+                root.add(targetRing);
+                const label = new THREE.Sprite(makeLabel(type));
+                label.position.set(0, type === 'golem' ? 2.8 : 1.85, 0);
+                label.scale.set(1.25, 0.25, 1);
+                root.add(label);
+
+                root.userData = {
+                    type, name: definition.name, regionId: region.id, homeX: position[0], homeZ: position[1],
+                    phase: index * 1.73 + Math.random() * 2, legs, arms, head, tail, body,
+                    targetRing, level: definition.level, hp: definition.hp, maxHp: definition.hp, speed: definition.speed,
+                    damage: definition.damage, aggroRadius: definition.aggro, attackRange: definition.reach,
+                    attackRate: definition.attackRate, xp: definition.xp, mode: 'hidden', nextAttackAt: 0,
+                    lastHitAt: -10, deathAt: -1, isBear: type === 'bear', isGolem: type === 'golem'
+                };
+                villageMonsters.push(root);
+            }
+
+            explorationRegions = [
+                { id: 'wolf-pass', name: 'Sohan Geçidi', center: [42, -52], radius: 18, detail: 'Aç kurt sürüsü görüldü.', spawns: [['wolf', 38, -48], ['wolf', 44, -50], ['wolf', 47, -56], ['wolf', 39, -58]] },
+                { id: 'red-forest', name: 'Kızıl Orman', center: [-53, 43], radius: 18, detail: 'Kara ayılar ve orman avcıları burada.', spawns: [['bear', -51, 41], ['bear', -57, 46], ['wolf', -48, 48], ['wolf', -59, 39]] },
+                { id: 'stone-quarry', name: 'Şeytan Taşlığı', center: [55, 54], radius: 18, detail: 'Taş muhafızlar bölgeyi koruyor.', spawns: [['golem', 52, 51], ['golem', 59, 56], ['golem', 49, 59]] }
+            ];
+            explorationRegions.forEach(region => region.spawns.forEach((spawn, index) => addMonster(spawn[0], region, [spawn[1], spawn[2]], index)));
+        }
+
+        function showExplorationToast(title, detail) {
+            const toast = document.getElementById('exploration-toast');
+            if (!toast) return;
+            document.getElementById('exploration-toast-title').textContent = title;
+            document.getElementById('exploration-toast-detail').textContent = detail;
+            toast.classList.remove('hidden');
+            clearTimeout(showExplorationToast.timer);
+            showExplorationToast.timer = setTimeout(() => toast.classList.add('hidden'), 3200);
+        }
+
+        function updatePlayerHealthHud() {
+            document.getElementById('hp-meter-value').style.width = `${inventoryHp}%`;
+            document.getElementById('hp-value').textContent = `${Math.ceil(inventoryHp)} / 100`;
+        }
+
+        function applyMonsterDamageAt(worldPos, multiplier = 1) {
+            if (!warriorGroup || !villageMonsters.length) return false;
+            let hitAny = false;
+            villageMonsters.forEach(monster => {
+                const data = monster.userData;
+                if (!monster.visible || data.mode === 'dead' || !discoveredRegions.has(data.regionId)) return;
+                if (worldSimulationTime - data.lastHitAt < 0.24) return;
+                const dx = monster.position.x - warriorGroup.position.x;
+                const dz = monster.position.z - warriorGroup.position.z;
+                const impactDistance = Math.hypot(monster.position.x - worldPos.x, monster.position.z - worldPos.z);
+                if (Math.hypot(dx, dz) > 4.4 || impactDistance > 5.2) return;
+
+                data.lastHitAt = worldSimulationTime;
+                data.mode = 'aggro';
+                data.hp = Math.max(0, data.hp - Math.floor((state.auraActive ? 27 : 18) * multiplier + Math.random() * 7));
+                data.hitUntil = worldSimulationTime + 0.16;
+                spawnMonsterDamageNumber(monster, Math.ceil((state.auraActive ? 27 : 18) * multiplier), Math.random() > 0.82);
+                hitAny = true;
+                if (data.hp <= 0) defeatVillageMonster(monster);
+            });
+            return hitAny;
+        }
+
+        function spawnMonsterDamageNumber(monster, damage, critical = false) {
+            if (!camera) return;
+            const position = monster.position.clone().add(new THREE.Vector3(0, monster.userData.isGolem ? 2.4 : 1.55, 0));
+            const projected = position.project(camera);
+            if (projected.z > 1) return;
+            const element = document.createElement('div');
+            element.className = 'damage-popup text-lg sm:text-2xl';
+            element.style.left = `${(projected.x * 0.5 + 0.5) * window.innerWidth}px`;
+            element.style.top = `${(-projected.y * 0.5 + 0.5) * window.innerHeight}px`;
+            element.style.color = critical ? '#fde047' : '#f5e8ca';
+            element.textContent = `${critical ? 'KRİTİK ' : ''}${damage}`;
+            document.getElementById('damage-layer').appendChild(element);
+            setTimeout(() => element.remove(), 1150);
+        }
+
+        function defeatVillageMonster(monster) {
+            const data = monster.userData;
+            data.mode = 'dead';
+            data.deathAt = worldSimulationTime;
+            data.targetRing.visible = false;
+            data.nextAttackAt = 0;
+            state.monsterKills++;
+            state.playerExp = (state.playerExp + data.xp) % 100;
+            document.getElementById('quest-kill-count').textContent = `${state.monsterKills} / 5`;
+            document.getElementById('quest-progress').style.width = `${Math.min(100, state.monsterKills / 5 * 100)}%`;
+            document.getElementById('exp-meter-value').style.width = `${state.playerExp}%`;
+            document.getElementById('exp-value').textContent = `${state.playerExp}%`;
+            const claw = getInventoryItem('monster-claw');
+            if (claw) claw.count += data.type === 'golem' ? 2 : 1;
+            showExplorationToast(`${data.name} yenildi`, `+${data.xp} EXP · ${data.type === 'golem' ? '2' : '1'} yaratık pençesi`);
+        }
+
+        function damagePlayer(amount, attackerName) {
+            inventoryHp = Math.max(0, inventoryHp - amount);
+            updatePlayerHealthHud();
+            showExplorationToast(`${attackerName} saldırdı`, `-${amount} HP`);
+            if (inventoryHp <= 0) {
+                inventoryHp = 65;
+                state.actionState = 'idle';
+                state.isHoldingAttack = false;
+                warriorGroup.position.set(0, getVillageTerrainHeight(0, 0), 0);
+                updatePlayerHealthHud();
+                showExplorationToast('Köye geri döndün', 'Canın kısmen yenilendi. Av alanına hazırlanıp tekrar çık.');
+            }
+        }
+
+        function updateVillageMonsters(elapsedTime) {
+            const dt = Math.max(0, Math.min(0.06, elapsedTime - worldSimulationTime));
+            worldSimulationTime = elapsedTime;
+            if (!warriorGroup) return;
+
+            explorationRegions.forEach(region => {
+                if (discoveredRegions.has(region.id)) return;
+                const distance = Math.hypot(warriorGroup.position.x - region.center[0], warriorGroup.position.z - region.center[1]);
+                if (distance > region.radius) return;
+                discoveredRegions.add(region.id);
+                villageMonsters.filter(monster => monster.userData.regionId === region.id).forEach(monster => {
+                    monster.visible = true;
+                    monster.userData.mode = 'idle';
+                    monster.userData.nextAttackAt = elapsedTime + 1.2 + Math.random() * 1.4;
+                });
+                document.getElementById('map-current-region').textContent = region.name;
+                showExplorationToast(region.name, region.detail);
+            });
+
+            const activeRegion = explorationRegions
+                .filter(region => discoveredRegions.has(region.id))
+                .sort((left, right) => Math.hypot(warriorGroup.position.x - left.center[0], warriorGroup.position.z - left.center[1])
+                    - Math.hypot(warriorGroup.position.x - right.center[0], warriorGroup.position.z - right.center[1]))[0];
+            if (activeRegion) document.getElementById('map-current-region').textContent = activeRegion.name;
+            else document.getElementById('map-current-region').textContent = 'Merkez Meydan';
+
+            let nearestTarget = null;
+            let nearestDistance = 7.5;
+            let threatCount = 0;
+            villageMonsters.forEach(monster => {
+                const data = monster.userData;
+                if (!discoveredRegions.has(data.regionId)) return;
+                if (data.mode === 'dead') {
+                    const deathAge = elapsedTime - data.deathAt;
+                    if (deathAge < 0.72) {
+                        monster.rotation.z = Math.sin(Math.min(1, deathAge / 0.72) * Math.PI * 0.5) * (data.isGolem ? 0.72 : 0.48);
+                        monster.position.y = getVillageTerrainHeight(monster.position.x, monster.position.z) - Math.sin(Math.min(1, deathAge / 0.72) * Math.PI * 0.5) * 0.22;
+                    } else if (deathAge < 24) {
+                        monster.visible = false;
+                    } else {
+                        monster.rotation.set(0, monster.rotation.y, 0);
+                        monster.position.set(data.homeX, getVillageTerrainHeight(data.homeX, data.homeZ), data.homeZ);
+                        data.hp = data.maxHp;
+                        data.mode = 'idle';
+                        data.lastHitAt = -10;
+                        monster.visible = true;
+                    }
+                    return;
+                }
+                if (!monster.visible) return;
+                threatCount++;
+
+                const dx = warriorGroup.position.x - monster.position.x;
+                const dz = warriorGroup.position.z - monster.position.z;
+                const distance = Math.hypot(dx, dz);
+                const isAttacking = data.mode === 'windup' || data.mode === 'recover';
+                const isAggro = distance < data.aggroRadius || ((data.mode === 'aggro' || isAttacking) && distance < data.aggroRadius + 7);
+                if (!isAttacking) data.mode = isAggro ? 'aggro' : 'idle';
+                let moving = false;
+                let movePhase = elapsedTime * (data.isGolem ? 2.1 : data.isBear ? 4.0 : 6.2) + data.phase;
+
+                if (isAggro && distance > data.attackRange && distance > 0.001) {
+                    const chaseStep = Math.min(distance - data.attackRange * 0.72, data.speed * dt);
+                    const nextX = monster.position.x + dx / distance * chaseStep;
+                    const nextZ = monster.position.z + dz / distance * chaseStep;
+                    const fromHome = Math.hypot(nextX - data.homeX, nextZ - data.homeZ);
+                    const region = explorationRegions.find(entry => entry.id === data.regionId);
+                    if (fromHome < region.radius + 8) {
+                        monster.position.x = nextX;
+                        monster.position.z = nextZ;
+                        moving = true;
+                    }
+                    const targetYaw = Math.atan2(dx, dz);
+                    let turn = Math.atan2(Math.sin(targetYaw - monster.rotation.y), Math.cos(targetYaw - monster.rotation.y));
+                    monster.rotation.y += turn * Math.min(1, dt * (data.isGolem ? 2.8 : 6.5));
+                } else if (!isAggro) {
+                    const roamX = data.homeX + Math.sin(elapsedTime * 0.28 + data.phase) * 1.6;
+                    const roamZ = data.homeZ + Math.cos(elapsedTime * 0.23 + data.phase) * 1.6;
+                    monster.position.x += (roamX - monster.position.x) * Math.min(1, dt * 0.65);
+                    monster.position.z += (roamZ - monster.position.z) * Math.min(1, dt * 0.65);
+                    monster.rotation.y = Math.atan2(roamX - data.homeX, roamZ - data.homeZ);
+                }
+
+                monster.position.y = getVillageTerrainHeight(monster.position.x, monster.position.z);
+                if (data.legs.length) {
+                    const stride = moving ? 0.58 : 0.055;
+                    data.legs.forEach((leg, index) => {
+                        const offset = data.isGolem ? (index === 0 ? 0 : Math.PI) : ((index === 0 || index === 3) ? 0 : Math.PI);
+                        const raisedPaw = data.mode === 'windup' && !data.isGolem && index < 2 ? 0.3 : 0;
+                        leg.rotation.x = Math.sin(movePhase + offset) * stride - raisedPaw;
+                    });
+                }
+                if (data.arms.length) {
+                    data.arms.forEach((arm, index) => {
+                        const windup = data.mode === 'windup' ? 1 : 0;
+                        arm.rotation.x = Math.sin(movePhase + index * Math.PI) * (moving ? 0.34 : 0.08) - windup * (data.isGolem ? 0.52 : 0.12);
+                        arm.rotation.z = (index === 0 ? -1 : 1) * (windup ? 0.48 : isAggro ? 0.24 : 0.06);
+                    });
+                }
+                data.body.position.y = moving ? Math.abs(Math.sin(movePhase * 2)) * (data.isGolem ? 0.035 : 0.045) : Math.sin(movePhase) * 0.012;
+                data.body.rotation.x = data.mode === 'windup' ? (data.isGolem ? -0.2 : -0.16) : isAggro && !moving ? -0.08 : Math.sin(movePhase) * (moving ? 0.035 : 0.012);
+                if (data.head) {
+                    data.head.rotation.x = data.mode === 'windup' ? (data.isGolem ? -0.18 : -0.12) : isAggro ? Math.sin(movePhase * 1.7) * 0.045 : Math.sin(movePhase * 0.6) * 0.035;
+                    data.head.rotation.y = isAggro ? 0 : Math.sin(movePhase * 0.43) * 0.1;
+                }
+                if (data.tail) data.tail.rotation.x = Math.sin(movePhase * 1.4) * (isAggro ? 0.35 : 0.18);
+                if (data.targetRing) data.targetRing.rotation.z += dt * 0.8;
+                if (worldSimulationTime < data.hitUntil) data.body.scale.setScalar(1 + Math.sin((data.hitUntil - worldSimulationTime) * 42) * 0.045);
+                else data.body.scale.set(1, 1, 1);
+
+                if (isAggro && distance <= data.attackRange) {
+                    if (data.mode === 'aggro' && elapsedTime >= data.nextAttackAt) {
+                        data.mode = 'windup';
+                        data.attackAt = elapsedTime + (data.isGolem ? 0.62 : data.isBear ? 0.46 : 0.32);
+                        data.nextAttackAt = elapsedTime + data.attackRate;
+                    } else if (data.mode === 'windup' && elapsedTime >= data.attackAt) {
+                        damagePlayer(data.damage, data.name);
+                        data.mode = 'recover';
+                        data.recoverAt = elapsedTime + (data.isGolem ? 0.52 : 0.3);
+                        const knockback = Math.max(0, 1 - distance / data.attackRange) * (data.isGolem ? 0.42 : 0.28);
+                        if (distance > 0.001) {
+                            warriorGroup.position.x += dx / distance * knockback;
+                            warriorGroup.position.z += dz / distance * knockback;
+                        }
+                    }
+                }
+                if (data.mode === 'recover' && elapsedTime >= data.recoverAt) data.mode = 'aggro';
+
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestTarget = monster;
+                }
+            });
+
+            villageMonsters.forEach(monster => {
+                if (monster.userData.targetRing) monster.userData.targetRing.visible = monster === nearestTarget && monster.userData.mode !== 'dead';
+            });
+            const targetPanel = document.getElementById('monster-target-panel');
+            if (nearestTarget) {
+                const targetData = nearestTarget.userData;
+                targetPanel.classList.remove('hidden');
+                document.getElementById('monster-target-name').textContent = targetData.name;
+                document.getElementById('monster-target-level').textContent = `Lv. ${targetData.level}`;
+                document.getElementById('monster-target-hp').style.width = `${targetData.hp / targetData.maxHp * 100}%`;
+                document.getElementById('monster-target-hp-text').textContent = `${targetData.hp} / ${targetData.maxHp}`;
+            } else {
+                targetPanel.classList.add('hidden');
+            }
+            document.getElementById('map-threat-count').textContent = `${threatCount} tehdit`;
+        }
+
         function spawnFootstepDust(worldPos, scaleMultiplier = 1.0) {
             if (isSamplingAnimations) return;
             const ringGeo = new THREE.RingGeometry(0.05, 0.22 * scaleMultiplier, 18);
@@ -5818,6 +6497,7 @@
             emitSparks(bladeContact, Math.floor(28 * dmgMultiplier), colorHex, 1.25);
 
             applyCameraImpactPunch(dmgMultiplier);
+            const hitMonster = applyMonsterDamageAt(warriorGroup.position, dmgMultiplier);
 
             if (state.metinActive && metinStoneGroup.visible) {
                 const dist = warriorGroup.position.distanceTo(metinStoneGroup.position);
@@ -5835,25 +6515,37 @@
                     if (metinRockMesh) metinRockMesh.material.emissiveIntensity = 3.1;
                     spawnRockDebris(metinStoneGroup.position, Math.floor(6 * dmgMultiplier), colorHex);
                     emitSparks(metinStoneGroup.position.clone().add(new THREE.Vector3(0, 1.0, 0)), 42, colorHex, 1.45);
-                } else {
+                } else if (!hitMonster) {
                     playCombatSound(dmgMultiplier >= 1.3 ? 'heavyswing' : 'swing');
                 }
-            } else {
+            } else if (!hitMonster) {
                 playCombatSound(dmgMultiplier >= 1.3 ? 'heavyswing' : 'swing');
             }
         }
 
         function orientWarriorTowardsMetin(dt, strength = 6.0) {
-            if (!state.metinActive || !metinStoneGroup || !metinStoneGroup.visible) return;
-            const toMetin = metinStoneGroup.position.clone().sub(warriorGroup.position);
-            toMetin.y = 0;
-            const dist = toMetin.length();
-            if (dist > 0.35 && dist < 5.8) {
-                const targetYaw = Math.atan2(toMetin.x, toMetin.z);
-                let diff = targetYaw - warriorGroup.rotation.y;
-                diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-                warriorGroup.rotation.y += diff * Math.min(1, dt * strength);
+            let targetPosition = null;
+            let bestDistance = 5.8;
+            if (state.metinActive && metinStoneGroup && metinStoneGroup.visible) {
+                const distance = warriorGroup.position.distanceTo(metinStoneGroup.position);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    targetPosition = metinStoneGroup.position;
+                }
             }
+            villageMonsters.forEach(monster => {
+                if (!monster.visible || monster.userData.mode === 'dead' || !discoveredRegions.has(monster.userData.regionId)) return;
+                const distance = warriorGroup.position.distanceTo(monster.position);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    targetPosition = monster.position;
+                }
+            });
+            if (!targetPosition || bestDistance < 0.35) return;
+            const targetYaw = Math.atan2(targetPosition.x - warriorGroup.position.x, targetPosition.z - warriorGroup.position.z);
+            let diff = targetYaw - warriorGroup.rotation.y;
+            diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+            warriorGroup.rotation.y += diff * Math.min(1, dt * strength);
         }
 
         function advanceWarriorStep(distanceStep) {
@@ -5867,6 +6559,10 @@
                 if (toStone.length() < 1.55) {
                     return; // Already in ideal sword strike range of the Metin stone
                 }
+            }
+            for (const monster of villageMonsters) {
+                if (!monster.visible || monster.userData.mode === 'dead') continue;
+                if (nextPos.distanceTo(monster.position) < 1.15) return;
             }
             if (isVillagePositionBlocked(nextPos)) return;
             warriorGroup.position.x = THREE.MathUtils.clamp(nextPos.x, -78, 78);
@@ -6017,15 +6713,38 @@
         }
 
         function evalPiecewiseCurve(p, keyframes) {
-            // Smoothly interpolates scalar value across an array of [time, value] keyframes using cubic smoothstep
+            const tangentAt = index => {
+                if (index <= 0 || index >= keyframes.length - 1) return 0;
+                const previous = keyframes[index - 1];
+                const current = keyframes[index];
+                const next = keyframes[index + 1];
+                const previousSpan = current[0] - previous[0];
+                const nextSpan = next[0] - current[0];
+                const previousSlope = (current[1] - previous[1]) / previousSpan;
+                const nextSlope = (next[1] - current[1]) / nextSpan;
+                if (previousSlope * nextSlope <= 0) return 0;
+                const previousWeight = 2 * nextSpan + previousSpan;
+                const nextWeight = nextSpan + 2 * previousSpan;
+                return (previousWeight + nextWeight)
+                    / (previousWeight / previousSlope + nextWeight / nextSlope);
+            };
+
             if (p <= keyframes[0][0]) return keyframes[0][1];
             for (let i = 0; i < keyframes.length - 1; i++) {
                 const t0 = keyframes[i][0], v0 = keyframes[i][1];
                 const t1 = keyframes[i + 1][0], v1 = keyframes[i + 1][1];
                 if (p <= t1) {
-                    const u = THREE.MathUtils.clamp((p - t0) / (t1 - t0), 0, 1);
-                    const s = u * u * (3 - 2 * u);
-                    return THREE.MathUtils.lerp(v0, v1, s);
+                    const span = t1 - t0;
+                    if (span <= 0) return v1;
+                    const u = THREE.MathUtils.clamp((p - t0) / span, 0, 1);
+                    const u2 = u * u;
+                    const u3 = u2 * u;
+                    const startTangent = tangentAt(i);
+                    const endTangent = tangentAt(i + 1);
+                    return (2 * u3 - 3 * u2 + 1) * v0
+                        + (u3 - 2 * u2 + u) * span * startTangent
+                        + (-2 * u3 + 3 * u2) * v1
+                        + (u3 - u2) * span * endTangent;
                 }
             }
             return keyframes[keyframes.length - 1][1];
@@ -6071,6 +6790,8 @@
                 warriorGroup.rotation.y += diff * Math.min(1, dt * 11.5);
             }
 
+            warriorGroup.position.y = getVillageTerrainHeight(warriorGroup.position.x, warriorGroup.position.z);
+
             let isBladeSwinging = false;
             let poseResponsiveness = 18.0;
             const auraColor = getActiveAuraHex();
@@ -6105,7 +6826,7 @@
                     }
 
                     const idleHipsY = 1.03 + breath * 0.014;
-                    const walkHipsY = 1.00 + Math.abs(Math.cos(c)) * 0.062 * s;
+                    const walkHipsY = 1.00 + Math.abs(Math.cos(c)) * 0.034 * s - Math.sin(c * 2) * 0.012 * s;
                     target.hipsY = THREE.MathUtils.lerp(idleHipsY, walkHipsY, s);
                     target.hipsX = THREE.MathUtils.lerp(breathSlow * 0.012, sinL * 0.038 * s, s);
                     target.hipsRotY = THREE.MathUtils.lerp(-0.22 + breathSlow * 0.02, -sinL * 0.18 * s, s);
@@ -6123,24 +6844,26 @@
                     const strideAmp = 0.68 * s;
                     target.thL_X = THREE.MathUtils.lerp(-0.16, -sinL * strideAmp, s);
                     target.knL_X = THREE.MathUtils.lerp(0.28, Math.max(0.08, cosL * 0.84 * s + 0.34 * s), s);
-                    target.anL_X = THREE.MathUtils.lerp(-0.12, -cosL * 0.25 * s, s);
-                    target.toeL_X = Math.max(0, sinL) * 0.35 * s;
+                    const liftL = Math.max(0, sinL);
+                    const liftR = Math.max(0, sinR);
+                    target.anL_X = THREE.MathUtils.lerp(-0.12, -cosL * 0.22 + liftL * 0.12, s);
+                    target.toeL_X = liftL * 0.26 * s;
 
                     target.thR_X = THREE.MathUtils.lerp(0.16, -sinR * strideAmp, s);
                     target.knR_X = THREE.MathUtils.lerp(0.24, Math.max(0.08, cosR * 0.84 * s + 0.34 * s), s);
-                    target.anR_X = THREE.MathUtils.lerp(-0.10, -cosR * 0.25 * s, s);
-                    target.toeR_X = Math.max(0, sinR) * 0.35 * s;
+                    target.anR_X = THREE.MathUtils.lerp(-0.10, -cosR * 0.22 + liftR * 0.12, s);
+                    target.toeR_X = liftR * 0.26 * s;
 
                     target.shL_X = THREE.MathUtils.lerp(-0.26 - breath * 0.022, -sinR * 0.56 * s - 0.16, s);
                     target.shL_Y = THREE.MathUtils.lerp(0.24, 0.16, s);
                     target.shL_Z = 0.34;
-                    target.elL_X = THREE.MathUtils.lerp(-0.58, -0.74, s);
+                    target.elL_X = THREE.MathUtils.lerp(-0.58, -0.62 + Math.max(0, cosR) * 0.08, s);
                     target.leftHandCurl = 0.30 + Math.sin(elapsedTime * 1.8) * 0.08 + s * 0.38;
 
                     target.shR_X = THREE.MathUtils.lerp(-0.28 + breath * 0.025, -sinL * 0.28 * s - 0.22, s);
                     target.shR_Y = THREE.MathUtils.lerp(-0.44, -0.34, s);
                     target.shR_Z = -0.40;
-                    target.elR_X = THREE.MathUtils.lerp(-0.52 + breath * 0.02, -0.44, s);
+                    target.elR_X = THREE.MathUtils.lerp(-0.52 + breath * 0.02, -0.58 + Math.max(0, cosL) * 0.08, s);
                     target.wrR_X = -0.16;
                     target.weaponPitch = Math.PI * 0.50 + breath * 0.015;
                 }
@@ -7000,6 +7723,14 @@
                     return;
                 }
                 if (inventoryOpen) return;
+                if (key === 'q') {
+                    useQuickItem('potion-red');
+                    return;
+                }
+                if (key === 'e') {
+                    useQuickItem('potion-blue');
+                    return;
+                }
                 if (key === ' ') {
                     state.isHoldingAttack = true;
                     triggerComboSlash(e);
@@ -7139,10 +7870,19 @@
             renderer.render(scene, camera);
         }
 
-        window.onload = function () {
-            initScene();
-            setCameraView('default');
-            animate();
+        window.onload = async function () {
+            const bootStatus = document.getElementById('boot-status');
+            try {
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                initScene();
+                setCameraView('default');
+                animate();
+                bootStatus.classList.add('hidden');
+            } catch (error) {
+                document.getElementById('boot-title').textContent = 'Oyun başlatılamadı';
+                document.getElementById('boot-detail').textContent = error instanceof Error ? error.message : String(error);
+                console.error('Oyun başlatılamadı:', error);
+            }
         };
     </script>
 </body>
