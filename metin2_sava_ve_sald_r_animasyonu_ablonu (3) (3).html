@@ -580,9 +580,10 @@
         let villageMonsters = [], explorationRegions = [], discoveredRegions = new Set(), worldSimulationTime = 0;
         let directionalSunLight;
         let reducedGraphics = false;
+        let rendererPixelRatioCap = 1.35;
         const performanceState = { sampleTime: 0, sampleFrames: 0, lowFrameWindows: 0, lastFrameTime: 0, reduced: false };
         let plusNineParticles;
-        let slashTrailMesh, slashTrailGeometry, slashTrailHistory = [];
+        let slashTrailMesh, slashTrailGeometry, slashTrailCoreMesh, slashTrailCoreGeometry, slashTrailHistory = [];
 
         let runeCircleMesh, auraPillarsGroup, vortexGroup;
         let activeShockwaves = [], activeCrescentWaves = [], activeImpactFlashes = [], activeRockDebris = [], activeLightPillars = [];
@@ -1487,6 +1488,41 @@
                 rCtx.lineTo(256 + Math.cos(a2) * 185, 256 + Math.sin(a2) * 185);
                 rCtx.stroke();
             }
+            rCtx.lineWidth = 3;
+            rCtx.beginPath();
+            rCtx.arc(256, 256, 154, 0, Math.PI * 2);
+            rCtx.stroke();
+            rCtx.beginPath();
+            rCtx.arc(256, 256, 116, 0, Math.PI * 2);
+            rCtx.stroke();
+            for (let i = 0; i < 32; i++) {
+                const angle = (i / 32) * Math.PI * 2;
+                const innerRadius = i % 4 === 0 ? 164 : 174;
+                const outerRadius = i % 4 === 0 ? 205 : 194;
+                rCtx.lineWidth = i % 4 === 0 ? 5 : 2;
+                rCtx.beginPath();
+                rCtx.moveTo(256 + Math.cos(angle) * innerRadius, 256 + Math.sin(angle) * innerRadius);
+                rCtx.lineTo(256 + Math.cos(angle) * outerRadius, 256 + Math.sin(angle) * outerRadius);
+                rCtx.stroke();
+            }
+            rCtx.lineWidth = 5;
+            rCtx.lineJoin = 'bevel';
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const centerX = 256 + Math.cos(angle) * 136;
+                const centerY = 256 + Math.sin(angle) * 136;
+                rCtx.save();
+                rCtx.translate(centerX, centerY);
+                rCtx.rotate(angle + Math.PI / 2);
+                rCtx.beginPath();
+                rCtx.moveTo(-12, 13);
+                rCtx.lineTo(-7, -8);
+                rCtx.lineTo(0, 3);
+                rCtx.lineTo(7, -13);
+                rCtx.lineTo(12, 11);
+                rCtx.stroke();
+                rCtx.restore();
+            }
             const runeTexture = new THREE.CanvasTexture(runeCanvas);
 
             const pCanvas = document.createElement('canvas');
@@ -1526,17 +1562,23 @@
             camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 150);
             clock = new THREE.Clock();
 
-            const isLowPowerDevice = window.innerWidth < 1000
-                || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4)
-                || (navigator.deviceMemory && navigator.deviceMemory <= 4);
-            reducedGraphics = isLowPowerDevice;
+            const cpuCores = navigator.hardwareConcurrency || 8;
+            const deviceMemory = navigator.deviceMemory || 8;
+            const isMobileRuntime = window.innerWidth <= 760 || window.matchMedia('(pointer: coarse)').matches;
+            const isLowPowerDevice = cpuCores <= 2
+                || deviceMemory <= 2
+                || (cpuCores <= 4 && deviceMemory <= 4);
+            reducedGraphics = isLowPowerDevice || (isMobileRuntime && (cpuCores <= 6 || deviceMemory <= 6));
+            const pixelBudget = isLowPowerDevice ? 950000 : isMobileRuntime ? 2100000 : 3600000;
+            const deviceCap = isLowPowerDevice ? 0.68 : isMobileRuntime ? 0.92 : 1.38;
+            rendererPixelRatioCap = Math.min(deviceCap, Math.sqrt(pixelBudget / (window.innerWidth * window.innerHeight)));
             renderer = new THREE.WebGLRenderer({
                 antialias: !isLowPowerDevice,
                 powerPreference: 'high-performance',
                 stencil: false
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowPowerDevice ? 0.9 : 1.5));
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, rendererPixelRatioCap));
             renderer.shadowMap.enabled = !isLowPowerDevice;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -5532,12 +5574,21 @@
             slashTrailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             slashTrailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             slashTrailGeometry.setIndex(indices);
+            slashTrailCoreGeometry = slashTrailGeometry.clone();
 
             const trailMat = new THREE.MeshBasicMaterial({
                 vertexColors: true,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.90,
+                opacity: 0.48,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const coreMat = new THREE.MeshBasicMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.92,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
@@ -5545,6 +5596,9 @@
             slashTrailMesh = new THREE.Mesh(slashTrailGeometry, trailMat);
             slashTrailMesh.frustumCulled = false;
             scene.add(slashTrailMesh);
+            slashTrailCoreMesh = new THREE.Mesh(slashTrailCoreGeometry, coreMat);
+            slashTrailCoreMesh.frustumCulled = false;
+            scene.add(slashTrailCoreMesh);
         }
 
         function updateSlashTrail(isSwinging) {
@@ -5574,16 +5628,20 @@
 
             if (slashTrailHistory.length < 3) {
                 slashTrailMesh.visible = false;
+                slashTrailCoreMesh.visible = false;
                 return;
             }
 
             slashTrailMesh.visible = true;
+            slashTrailCoreMesh.visible = true;
             const tipCurve = new THREE.CatmullRomCurve3(slashTrailHistory.map(h => h.tip));
             const baseCurve = new THREE.CatmullRomCurve3(slashTrailHistory.map(h => h.base));
 
             const maxSubdivisions = 44;
             const posAttr = slashTrailGeometry.attributes.position;
             const colAttr = slashTrailGeometry.attributes.color;
+            const corePosAttr = slashTrailCoreGeometry.attributes.position;
+            const coreColAttr = slashTrailCoreGeometry.attributes.color;
 
             const isSkillSwing = !state.actionState.startsWith('slash');
             const outerColor = new THREE.Color(state.auraActive || isSkillSwing ? getActiveAuraHex() : 0x94a3b8);
@@ -5594,9 +5652,14 @@
                 const tPt = tipCurve.getPoint(t);
                 const bPt = baseCurve.getPoint(t);
                 const fade = Math.pow(1 - t, 1.25);
+                const bladeCenter = tPt.clone().lerp(bPt, 0.5);
+                const coreTip = bladeCenter.clone().lerp(tPt, 0.72);
+                const coreBase = bladeCenter.clone().lerp(bPt, 0.72);
 
                 posAttr.setXYZ(i * 2, tPt.x, tPt.y, tPt.z);
                 posAttr.setXYZ(i * 2 + 1, bPt.x, bPt.y, bPt.z);
+                corePosAttr.setXYZ(i * 2, coreTip.x, coreTip.y, coreTip.z);
+                corePosAttr.setXYZ(i * 2 + 1, coreBase.x, coreBase.y, coreBase.z);
 
                 const edgeHotness = Math.max(0, 1 - t * 2.1);
                 const rTip = THREE.MathUtils.lerp(outerColor.r, hotEdgeColor.r, edgeHotness) * fade;
@@ -5605,10 +5668,15 @@
 
                 colAttr.setXYZ(i * 2, rTip, gTip, bTip);
                 colAttr.setXYZ(i * 2 + 1, outerColor.r * fade * 0.30, outerColor.g * fade * 0.30, outerColor.b * fade * 0.30);
+                const coreHotness = Math.max(0, 1 - t * 1.7);
+                coreColAttr.setXYZ(i * 2, THREE.MathUtils.lerp(outerColor.r, 1, coreHotness) * fade, THREE.MathUtils.lerp(outerColor.g, 0.94, coreHotness) * fade, THREE.MathUtils.lerp(outerColor.b, 0.76, coreHotness) * fade);
+                coreColAttr.setXYZ(i * 2 + 1, outerColor.r * fade * 0.62, outerColor.g * fade * 0.62, outerColor.b * fade * 0.62);
             }
 
             posAttr.needsUpdate = true;
             colAttr.needsUpdate = true;
+            corePosAttr.needsUpdate = true;
+            coreColAttr.needsUpdate = true;
         }
 
         function createSkillVFXSystems(textures) {
@@ -5667,7 +5735,7 @@
             }
             scene.add(vortexGroup);
 
-            const sparkCount = 180;
+            const sparkCount = reducedGraphics ? 110 : 220;
             const sGeo = new THREE.BufferGeometry();
             const sPos = new Float32Array(sparkCount * 3);
             const sCol = new Float32Array(sparkCount * 3);
@@ -5677,6 +5745,7 @@
                 sparkData.push({
                     pos: new THREE.Vector3(0, -100, 0),
                     vel: new THREE.Vector3(),
+                    color: new THREE.Color(),
                     life: 0,
                     maxLife: 1
                 });
@@ -5730,25 +5799,30 @@
             warriorGroup.add(plusNineParticles);
         }
 
-        function emitSparks(origin, count = 28, colorHex = 0xffaa00, speedScale = 1.0) {
+        function emitSparks(origin, count = 28, colorHex = 0xffaa00, speedScale = 1.0, direction = null) {
             if (isSamplingAnimations || !sparkParticles) return;
             const colAttr = sparkParticles.geometry.attributes.color;
             const c = new THREE.Color(colorHex);
+            const emissionAxis = direction ? direction.clone().normalize() : null;
+            const spread = new THREE.Vector3();
             let spawned = 0;
 
             for (let i = 0; i < sparkData.length && spawned < count; i++) {
                 const s = sparkData[i];
                 if (s.life <= 0) {
                     s.pos.copy(origin);
-                    const angle = Math.random() * Math.PI * 2;
                     const spd = (1.8 + Math.random() * 4.5) * speedScale;
-                    s.vel.set(
-                        Math.cos(angle) * spd,
-                        (2.2 + Math.random() * 4.2) * speedScale,
-                        Math.sin(angle) * spd
-                    );
+                    if (emissionAxis) {
+                        spread.set(Math.random() - 0.5, Math.random() * 0.6, Math.random() - 0.5);
+                        s.vel.copy(emissionAxis).addScaledVector(spread, 0.48).normalize().multiplyScalar(spd);
+                        s.vel.y += (1.2 + Math.random() * 2.8) * speedScale;
+                    } else {
+                        const angle = Math.random() * Math.PI * 2;
+                        s.vel.set(Math.cos(angle) * spd, (2.2 + Math.random() * 4.2) * speedScale, Math.sin(angle) * spd);
+                    }
                     s.maxLife = 0.35 + Math.random() * 0.35;
                     s.life = s.maxLife;
+                    s.color.copy(c);
                     colAttr.setXYZ(i, c.r, c.g, c.b);
                     spawned++;
                 }
@@ -5895,18 +5969,32 @@
 
         function spawnVerticalLightPillars(centerPos, colorHex, count = 6) {
             if (isSamplingAnimations) return;
+            const activeLimit = reducedGraphics ? 1 : 3;
+            if (activeLightPillars.length >= activeLimit) return;
             const group = new THREE.Group();
             group.position.copy(centerPos);
+            const effectiveCount = reducedGraphics ? Math.min(count, 1) : Math.min(count, 2);
 
-            for (let i = 0; i < count; i++) {
-                const ang = (i / count) * Math.PI * 2 + Math.random() * 0.3;
-                const rad = 0.35 + Math.random() * 1.0;
-                const h = 2.4 + Math.random() * 1.2;
-                const beamGeo = new THREE.CylinderGeometry(0.04, 0.12, h, 8, 1, true);
+            [0, 1].forEach(index => {
+                const radius = 0.32 + index * 0.22;
+                const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(radius, radius + 0.028, 32),
+                    new THREE.MeshBasicMaterial({ color: index === 0 ? 0xfff4dc : colorHex, transparent: true, opacity: index === 0 ? 0.4 : 0.28, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
+                );
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = 0.035 + index * 0.004;
+                group.add(ring);
+            });
+
+            for (let i = 0; i < effectiveCount; i++) {
+                const ang = (i / effectiveCount) * Math.PI * 2 + Math.random() * 0.3;
+                const rad = 0.38 + Math.random() * 0.42;
+                const h = 1.25 + Math.random() * 0.55;
+                const beamGeo = new THREE.CylinderGeometry(0.003, 0.075, h, 8, 2, true);
                 const beamMat = new THREE.MeshBasicMaterial({
-                    color: i % 2 === 0 ? 0xffffff : colorHex,
+                    color: colorHex,
                     transparent: true,
-                    opacity: 0.85,
+                    opacity: 0.22,
                     blending: THREE.AdditiveBlending,
                     side: THREE.DoubleSide,
                     depthWrite: false
@@ -5914,8 +6002,34 @@
                 const beam = new THREE.Mesh(beamGeo, beamMat);
                 beam.position.set(Math.cos(ang) * rad, h * 0.5, Math.sin(ang) * rad);
                 group.add(beam);
+                const core = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.002, 0.02, h * 0.72, 6, 1, true),
+                    new THREE.MeshBasicMaterial({ color: 0xffe4a8, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
+                );
+                core.position.copy(beam.position);
+                group.add(core);
+                if (!reducedGraphics && i === 0) {
+                    const helixPoints = [];
+                    for (let step = 0; step <= 14; step++) {
+                        const t = step / 14;
+                        const twist = t * Math.PI * 2 + i;
+                        helixPoints.push(new THREE.Vector3(
+                            Math.cos(ang) * rad + Math.cos(twist) * 0.065,
+                            0.08 + t * h,
+                            Math.sin(ang) * rad + Math.sin(twist) * 0.065
+                        ));
+                    }
+                    const helix = new THREE.Mesh(
+                        new THREE.TubeGeometry(new THREE.CatmullRomCurve3(helixPoints), 18, 0.012, 4, false),
+                        new THREE.MeshBasicMaterial({ color: 0xffe8bc, transparent: true, opacity: 0.24, blending: THREE.AdditiveBlending, depthWrite: false })
+                    );
+                    group.add(helix);
+                }
             }
 
+            group.traverse(child => {
+                if (child.material) child.material.userData.baseOpacity = child.material.opacity;
+            });
             scene.add(group);
             activeLightPillars.push({ group, age: 0, maxAge: 0.50 });
         }
@@ -5925,18 +6039,40 @@
             flashGroup.position.copy(worldPos);
             flashGroup.lookAt(camera.position);
 
-            [-1, 1].forEach(dir => {
-                const beamGeo = new THREE.PlaneGeometry(1.85, 0.16);
+            const impactFlare = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: materials.textures.sparkTexture,
+                color: 0xfff3d1,
+                transparent: true,
+                opacity: 0.92,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            }));
+            impactFlare.scale.set(0.58, 0.58, 1);
+            flashGroup.add(impactFlare);
+
+            const impactRing = new THREE.Mesh(
+                new THREE.RingGeometry(0.12, 0.22, 32),
+                new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
+            );
+            flashGroup.add(impactRing);
+            const innerRing = new THREE.Mesh(
+                new THREE.RingGeometry(0.04, 0.075, 24),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false })
+            );
+            flashGroup.add(innerRing);
+
+            [-1, 1].forEach((dir, index) => {
+                const beamGeo = new THREE.PlaneGeometry(index === 0 ? 2.25 : 1.62, index === 0 ? 0.14 : 0.1);
                 const beamMat = new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
+                    color: index === 0 ? 0xffffff : colorHex,
                     transparent: true,
-                    opacity: 0.92,
+                    opacity: index === 0 ? 0.88 : 0.72,
                     blending: THREE.AdditiveBlending,
                     side: THREE.DoubleSide,
                     depthWrite: false
                 });
                 const beam = new THREE.Mesh(beamGeo, beamMat);
-                beam.rotation.z = dir * 0.65 + (Math.random() - 0.5) * 0.25;
+                beam.rotation.z = dir * (index === 0 ? 0.68 : 0.34) + (Math.random() - 0.5) * 0.2;
                 flashGroup.add(beam);
 
                 const glowGeo = new THREE.PlaneGeometry(2.35, 0.42);
@@ -5953,6 +6089,9 @@
                 flashGroup.add(glow);
             });
 
+            flashGroup.traverse(child => {
+                if (child.material) child.material.userData.baseOpacity = child.material.opacity;
+            });
             scene.add(flashGroup);
             activeImpactFlashes.push({ group: flashGroup, age: 0, maxAge: 0.24 });
         }
@@ -5984,42 +6123,71 @@
 
         function spawnCrescentWave(origin, angleY, colorHex, tiltAngle = 0) {
             if (isSamplingAnimations) return;
+            const activeLimit = reducedGraphics ? 1 : 3;
+            if (activeCrescentWaves.length >= activeLimit) return;
             const waveGroup = new THREE.Group();
             waveGroup.position.copy(origin);
-            waveGroup.position.y = 0.95;
+            waveGroup.position.y += 0.58;
             waveGroup.rotation.y = angleY;
             waveGroup.rotation.z = tiltAngle;
 
-            const outerGeo = new THREE.RingGeometry(0.75, 1.55, 32, 1, -Math.PI * 0.38, Math.PI * 0.76);
-            outerGeo.rotateX(-Math.PI / 2);
-            outerGeo.rotateY(-Math.PI / 2);
-            const outerMat = new THREE.MeshBasicMaterial({
+            const makeCrescent = (outerRadius, innerRadius, halfAngle) => {
+                const shape = new THREE.Shape();
+                const segments = 32;
+                for (let index = 0; index <= segments; index++) {
+                    const angle = -halfAngle + index / segments * halfAngle * 2;
+                    const x = Math.sin(angle) * outerRadius;
+                    const y = Math.cos(angle) * outerRadius;
+                    if (index === 0) shape.moveTo(x, y);
+                    else shape.lineTo(x, y);
+                }
+                for (let index = segments; index >= 0; index--) {
+                    const angle = -halfAngle + index / segments * halfAngle * 2;
+                    shape.lineTo(Math.sin(angle) * innerRadius, Math.cos(angle) * innerRadius);
+                }
+                shape.closePath();
+                return new THREE.ShapeGeometry(shape, 2);
+            };
+
+            const baseScale = reducedGraphics ? 0.62 : 0.78;
+            const glowGeo = makeCrescent(1.48, 0.96, 0.94);
+            const bladeGeo = makeCrescent(1.39, 1.10, 0.90);
+            const coreGeo = makeCrescent(1.31, 1.25, 0.84);
+            const glowMat = new THREE.MeshBasicMaterial({
                 color: colorHex,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.90,
+                opacity: 0.1,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
-            waveGroup.add(new THREE.Mesh(outerGeo, outerMat));
-
-            const coreGeo = new THREE.RingGeometry(1.12, 1.48, 32, 1, -Math.PI * 0.34, Math.PI * 0.68);
-            coreGeo.rotateX(-Math.PI / 2);
-            coreGeo.rotateY(-Math.PI / 2);
+            glowMat.userData.baseOpacity = glowMat.opacity;
+            const bladeMat = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.42,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            bladeMat.userData.baseOpacity = bladeMat.opacity;
             const coreMat = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
                 side: THREE.DoubleSide,
                 transparent: true,
-                opacity: 0.95,
+                opacity: 0.78,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
+            coreMat.userData.baseOpacity = coreMat.opacity;
+            waveGroup.add(new THREE.Mesh(glowGeo, glowMat));
+            waveGroup.add(new THREE.Mesh(bladeGeo, bladeMat));
             waveGroup.add(new THREE.Mesh(coreGeo, coreMat));
 
             scene.add(waveGroup);
 
             const dir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), angleY);
-            activeCrescentWaves.push({ mesh: waveGroup, mats: [outerMat, coreMat], dir, age: 0, maxAge: 0.60 });
+            activeCrescentWaves.push({ mesh: waveGroup, mats: [glowMat, bladeMat, coreMat], dir, age: 0, maxAge: 0.52, baseScale });
         }
 
         function createMetinStoneTarget() {
@@ -6543,7 +6711,7 @@
             mesh.position.set(worldPos.x, 1.08, worldPos.z);
             mesh.rotation.y = yawAngle;
             scene.add(mesh);
-            activeSonicRings.push({ mesh, mat: ringMat, age: 0, maxAge: 0.36 });
+            activeSonicRings.push({ mesh, mat: ringMat, age: 0, maxAge: 0.32, scaleFactor: reducedGraphics ? 1.7 : 2.5 });
         }
 
         function applyCameraImpactPunch(strength = 1.0) {
@@ -6556,25 +6724,40 @@
 
         function spawnGroundShockwave(worldPos, colorHex = 0xfbbf24, maxRadius = 2.4, dmgMultiplier = 1.0) {
             if (isSamplingAnimations) return;
-            const ringGeo = new THREE.RingGeometry(0.22, 0.56, 36);
-            const ringMat = new THREE.MeshBasicMaterial({
-                color: colorHex,
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.90,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
+            const mesh = new THREE.Group();
+            const materials = [];
+            const ringLayers = [
+                { inner: 0.10, outer: 0.20, color: 0xffffff, delay: 0, scale: 0.78 },
+                { inner: 0.27, outer: 0.36, color: colorHex, delay: 0.10, scale: 1.0 },
+                { inner: 0.48, outer: 0.53, color: 0xffd88a, delay: 0.19, scale: 1.18 }
+            ];
+            const rings = reducedGraphics ? ringLayers.slice(0, 2) : ringLayers;
+            rings.forEach(ring => {
+                const material = new THREE.MeshBasicMaterial({
+                    color: ring.color,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.94,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
+                });
+                material.userData.baseOpacity = material.opacity;
+                const layer = new THREE.Mesh(new THREE.RingGeometry(ring.inner, ring.outer, 48), material);
+                layer.rotation.x = -Math.PI / 2;
+                layer.position.y = 0.026 + rings.indexOf(ring) * 0.002;
+                layer.userData = { delay: ring.delay, scale: ring.scale };
+                mesh.add(layer);
+                materials.push(material);
             });
-            const mesh = new THREE.Mesh(ringGeo, ringMat);
-            mesh.rotation.x = -Math.PI / 2;
             mesh.position.set(worldPos.x, 0.03, worldPos.z);
             scene.add(mesh);
 
             activeShockwaves.push({
                 mesh,
+                materials,
                 age: 0,
-                duration: 0.48,
-                maxScale: maxRadius * 2.0
+                duration: 0.42,
+                maxScale: Math.min(maxRadius * (reducedGraphics ? 0.82 : 1.08), reducedGraphics ? 2.0 : 2.9)
             });
 
             const bladeContact = new THREE.Vector3();
@@ -6582,8 +6765,10 @@
             else bladeContact.copy(worldPos).add(new THREE.Vector3(0, 1.1, 0));
 
             spawn3DSlashImpactFlash(bladeContact, colorHex);
-            spawnVerticalLightPillars(worldPos, colorHex, dmgMultiplier >= 1.3 ? 7 : 4);
-            emitSparks(bladeContact, Math.floor(28 * dmgMultiplier), colorHex, 1.25);
+            if (dmgMultiplier >= 1.55) spawnVerticalLightPillars(worldPos, colorHex, reducedGraphics ? 1 : 2);
+            const slashDirection = new THREE.Vector3(0, 0.24, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), warriorGroup.rotation.y);
+            const sparkCount = reducedGraphics ? 7 : Math.min(18, Math.floor(14 * dmgMultiplier));
+            emitSparks(bladeContact, sparkCount, colorHex, reducedGraphics ? 0.82 : 1.0, slashDirection);
 
             applyCameraImpactPunch(dmgMultiplier);
             const hitMonster = applyMonsterDamageAt(warriorGroup.position, dmgMultiplier);
@@ -7575,10 +7760,16 @@
                 const p = lp.age / lp.maxAge;
                 if (p >= 1) {
                     scene.remove(lp.group);
+                    lp.group.traverse(child => {
+                        if (!child.isMesh) return;
+                        child.geometry.dispose();
+                        if (Array.isArray(child.material)) child.material.forEach(material => material.dispose());
+                        else child.material.dispose();
+                    });
                     activeLightPillars.splice(i, 1);
                 } else {
                     lp.group.scale.set(1 - p * 0.3, 1 + p * 0.55, 1 - p * 0.3);
-                    lp.group.children.forEach(c => { c.material.opacity = (1 - p) * 0.82; });
+                    lp.group.children.forEach(c => { c.material.opacity = (1 - p) * (c.material.userData.baseOpacity || 0.82); });
                 }
             }
 
@@ -7588,11 +7779,17 @@
                 const p = fl.age / fl.maxAge;
                 if (p >= 1) {
                     scene.remove(fl.group);
+                    fl.group.traverse(child => {
+                        if (!child.isMesh && !child.isSprite) return;
+                        if (child.geometry) child.geometry.dispose();
+                        if (Array.isArray(child.material)) child.material.forEach(material => material.dispose());
+                        else child.material.dispose();
+                    });
                     activeImpactFlashes.splice(i, 1);
                 } else {
                     const sc = 0.6 + p * 1.35;
                     fl.group.scale.set(sc, sc, sc);
-                    fl.group.children.forEach(c => { c.material.opacity = (1 - p); });
+                    fl.group.children.forEach(c => { c.material.opacity = (1 - p) * (c.material.userData.baseOpacity || 1); });
                 }
             }
 
@@ -7620,16 +7817,19 @@
                 const p = cw.age / cw.maxAge;
                 if (p >= 1) {
                     scene.remove(cw.mesh);
+                    cw.mesh.traverse(child => { if (child.isMesh) child.geometry.dispose(); });
+                    cw.mats.forEach(material => material.dispose());
                     activeCrescentWaves.splice(i, 1);
                 } else {
-                    cw.mesh.position.addScaledVector(cw.dir, dt * 8.8);
-                    const scale = 1 + p * 1.38;
+                    cw.mesh.position.addScaledVector(cw.dir, dt * (reducedGraphics ? 5.4 : 6.8));
+                    const scale = cw.baseScale * (1 + p * 0.82);
                     cw.mesh.scale.set(scale, scale, scale);
-                    cw.mats.forEach(m => { m.opacity = (1 - p) * 0.90; });
+                    cw.mats.forEach(m => { m.opacity = (1 - p) * (m.userData.baseOpacity || 0.90); });
                 }
             }
 
             const sPosAttr = sparkParticles.geometry.attributes.position;
+            const sColAttr = sparkParticles.geometry.attributes.color;
             for (let i = 0; i < sparkData.length; i++) {
                 const s = sparkData[i];
                 if (s.life > 0) {
@@ -7643,11 +7843,16 @@
                         s.vel.z *= 0.75;
                     }
                     sPosAttr.setXYZ(i, s.pos.x, s.pos.y, s.pos.z);
+                    const life = Math.max(0, s.life / s.maxLife);
+                    const glow = 0.28 + life * 0.92;
+                    sColAttr.setXYZ(i, s.color.r * glow, s.color.g * glow, s.color.b * glow);
                 } else {
                     sPosAttr.setXYZ(i, 0, -100, 0);
+                    sColAttr.setXYZ(i, 0, 0, 0);
                 }
             }
             sPosAttr.needsUpdate = true;
+            sColAttr.needsUpdate = true;
 
             if (metinStoneGroup && metinStoneGroup.visible) {
                 metinStoneGroup.scale.lerp(new THREE.Vector3(1, 1, 1), dt * 10);
@@ -7662,11 +7867,16 @@
                 const progress = sw.age / sw.duration;
                 if (progress >= 1) {
                     scene.remove(sw.mesh);
+                    sw.mesh.traverse(child => { if (child.isMesh) child.geometry.dispose(); });
+                    sw.materials.forEach(material => material.dispose());
                     activeShockwaves.splice(i, 1);
                 } else {
-                    const s = 1 + progress * sw.maxScale;
-                    sw.mesh.scale.set(s, s, 1);
-                    sw.mesh.material.opacity = (1 - progress) * 0.82;
+                    sw.mesh.children.forEach(child => {
+                        const pulse = THREE.MathUtils.clamp((progress - child.userData.delay) / (1 - child.userData.delay), 0, 1);
+                        const scale = 1 + pulse * sw.maxScale * child.userData.scale;
+                        child.scale.set(scale, scale, 1);
+                        child.material.opacity = Math.max(0, 1 - pulse) * (child.material.userData.baseOpacity || 0.92);
+                    });
                 }
             }
 
@@ -7706,7 +7916,7 @@
                     scene.remove(sr.mesh);
                     activeSonicRings.splice(i, 1);
                 } else {
-                    const s = 1 + p * 3.8;
+                    const s = 1 + p * sr.scaleFactor;
                     sr.mesh.scale.set(s, s, 1);
                     sr.mat.opacity = Math.pow(1 - p, 1.3) * 0.92;
                 }
@@ -7854,6 +8064,8 @@
             window.addEventListener('resize', () => {
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
+                const reducedPixelCap = performanceState.reduced ? 0.68 : Infinity;
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, rendererPixelRatioCap, reducedPixelCap));
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 setCameraView(activeCameraView);
             });
@@ -7944,7 +8156,7 @@
                     performanceState.reduced = true;
                     reducedGraphics = true;
                     renderer.shadowMap.enabled = false;
-                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 0.75));
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, rendererPixelRatioCap, 0.68));
                     renderer.setSize(window.innerWidth, window.innerHeight);
                     villageGrassMeshes.forEach(mesh => { mesh.count = Math.floor(mesh.count * 0.5); });
                 }
