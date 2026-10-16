@@ -234,6 +234,95 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
         ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.5); border-radius: 4px; }
+        .hud-frame {
+            border-color: rgba(202, 164, 94, 0.62);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.48), inset 0 1px rgba(255, 239, 197, 0.13), inset 0 -1px rgba(0, 0, 0, 0.62);
+            backdrop-filter: blur(16px) saturate(1.18);
+        }
+        .hud-kicker { color: #efd18c; }
+        .hud-meter { box-shadow: inset 0 1px 3px rgba(0,0,0,.95), 0 0 0 1px rgba(225,189,117,.08); }
+        .map-field { border-color: rgba(221,190,128,.52); box-shadow: inset 0 0 28px rgba(7,10,9,.52); }
+        .quickbar-slot { background: linear-gradient(155deg, rgba(54,51,43,.96), rgba(11,14,14,.99) 68%); }
+        .quickbar-slot svg { width: 20px; height: 20px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.7)); }
+        .hud-frame::before { inset: 3px; border-color: rgba(255, 231, 174, 0.11); }
+        .inventory-window {
+            border-color: rgba(218, 182, 116, 0.82);
+            background: linear-gradient(145deg, rgba(28, 28, 24, .99), rgba(13, 15, 15, .99) 60%, rgba(29, 20, 17, .99));
+        }
+        .item-slot, .quickbar-slot { border-color: rgba(184, 150, 91, .62); }
+        .item-slot:active, .quickbar-slot:active { transform: translateY(1px); filter: brightness(1.25); }
+        #inventory-modal { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+        #inventory-window { overscroll-behavior: contain; }
+        @media (max-width: 640px) {
+            header.fixed.top-3 { top: max(7px, env(safe-area-inset-top)); left: 8px; right: 8px; align-items: center; gap: 6px; }
+            #player-hud { width: calc(100vw - 158px); min-width: 0; padding: 7px; gap: 7px; }
+            #player-hud .hud-portrait { width: 34px; height: 40px; }
+            #player-hud .hud-portrait svg { width: 29px; height: 34px; }
+            #player-hud .hud-kicker { font-size: 7px; }
+            #player-hud h1 { font-size: 13px; }
+            #player-hud .hud-meter { height: 6px; }
+            #player-hud #hp-value { width: 42px; font-size: 8px; }
+            #player-hud #exp-value { font-size: 9px; }
+            #player-hud > div:last-child { min-width: 0; }
+            header nav { flex: 0 0 auto; gap: 3px; padding: 4px; }
+            header nav button { width: 34px; height: 36px; }
+            #quest-panel, #world-map { top: max(83px, calc(env(safe-area-inset-top) + 72px)); width: calc(50vw - 14px); padding: 8px; }
+            #quest-panel { left: 8px; }
+            #world-map { right: 8px; }
+            #quest-panel .quest-row { padding: 6px 7px; }
+            #quest-panel .quest-row p { font-size: 8px; line-height: 1.25; }
+            #quest-panel .hud-kicker, #world-map .hud-kicker { font-size: 8px; }
+            #quest-panel h2, #world-map h2 { font-size: 12px; }
+            #quest-panel .quest-secondary { font-size: 9px; }
+            #world-map .map-field ~ div { font-size: 9px; }
+            #quest-panel .quest-secondary { display: flex; }
+            #quest-panel .quest-secondary.mt-1 { display: none; }
+            #quest-panel > div:last-child { display: none; }
+            #world-map .map-field { height: 62px; }
+            #world-map > div:first-child { margin-bottom: 5px; }
+            #world-map .map-kicker { font-size: 7px; }
+            #monster-target-panel { top: max(220px, calc(env(safe-area-inset-top) + 204px)); right: 8px; width: calc(50vw - 14px); padding: 7px; }
+            #exploration-toast { top: 35%; width: min(300px, calc(100vw - 32px)); padding: 12px; }
+            #quickbar { bottom: max(126px, calc(env(safe-area-inset-bottom) + 118px)); gap: 4px; padding: 5px; }
+            .quickbar-slot { width: 35px; height: 38px; }
+            .quickbar-slot svg { width: 19px; height: 19px; }
+            #joystick-zone { left: max(8px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); width: 96px; height: 96px; }
+            #joystick-knob { width: 38px; height: 38px; }
+            #combat-cluster { right: max(8px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: 72px; height: 72px; transform: none; }
+            #btn-skill-1, #btn-skill-2, #btn-skill-3, #btn-skill-4 { display: none; }
+            #btn-combo { width: 66px; height: 66px; }
+            #btn-combo svg { width: 24px; height: 24px; }
+            #inventory-window { width: 100%; max-height: calc(100dvh - 20px); }
+            #inventory-window > div:last-child { grid-template-columns: 1fr; }
+            #inventory-window section[aria-label="Karakter ekipmanı"] { border-right: 0; }
+            #inventory-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+            .item-slot { font-size: 19px; }
+            #inspector-panel { top: max(58px, env(safe-area-inset-top)); right: 8px; width: min(320px, calc(100vw - 16px)); max-height: calc(100dvh - 150px); }
+        }
+        @media (max-width: 380px) {
+            #player-hud { width: calc(100vw - 150px); }
+            #player-hud .hud-portrait { width: 30px; height: 36px; }
+            header nav button { width: 31px; height: 34px; }
+            #quest-panel, #world-map, #monster-target-panel { width: calc(50vw - 12px); }
+            #quickbar { gap: 2px; }
+            .quickbar-slot { width: 32px; height: 35px; }
+        }
+        @media (max-width: 380px) and (min-height: 601px) {
+            #player-hud .hud-kicker { font-size: 7px; }
+            #quest-panel .quest-row p { font-size: 8px; }
+        }
+        @media (max-height: 600px) and (max-width: 640px) {
+            #quest-panel, #world-map { top: 76px; }
+            #world-map .map-field { height: 48px; }
+            #monster-target-panel { top: 186px; }
+            #quickbar { bottom: 105px; }
+            #joystick-zone { width: 82px; height: 82px; }
+            #combat-cluster { width: 62px; height: 62px; }
+            #btn-combo { width: 58px; height: 58px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+        }
     </style>
 </head>
 <body class="relative select-none">
@@ -303,13 +392,13 @@
     </div>
 
     <nav id="quickbar" class="hud-frame fixed bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 p-1.5" aria-label="Hızlı erişim ve yetenekler">
-        <button class="quickbar-slot text-xl text-red-300" onclick="useQuickItem('potion-red')" title="Kırmızı İksir (Q)"><kbd>Q</kbd><span>🧪</span></button>
-        <button class="quickbar-slot text-xl text-sky-300" onclick="useQuickItem('potion-blue')" title="Mavi İksir (E)"><kbd>E</kbd><span>🧪</span></button>
+        <button class="quickbar-slot text-red-300" onclick="useQuickItem('potion-red')" title="Kırmızı İksir (Q)"><kbd>Q</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6m-5 0v5l-4.6 9a2.4 2.4 0 0 0 2.1 3.5h9a2.4 2.4 0 0 0 2.1-3.5L14 8V3M7.5 15h9"/></svg></button>
+        <button class="quickbar-slot text-sky-300" onclick="useQuickItem('potion-blue')" title="Mavi İksir (E)"><kbd>E</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6m-5 0v5l-4.6 9a2.4 2.4 0 0 0 2.1 3.5h9a2.4 2.4 0 0 0 2.1-3.5L14 8V3M7.5 15h9"/></svg></button>
         <span class="mx-0.5 h-8 w-px bg-amber-200/20"></span>
-        <button class="quickbar-slot text-amber-300" onclick="triggerSkill('aura')" title="Hava Kılıcı (1)"><kbd>1</kbd><span>✦</span></button>
-        <button class="quickbar-slot text-cyan-300" onclick="triggerSkill('spin')" title="Çevirme (2)"><kbd>2</kbd><span>◉</span></button>
-        <button class="quickbar-slot text-orange-300" onclick="triggerSkill('triple')" title="Üç Yönlü (3)"><kbd>3</kbd><span>ϟ</span></button>
-        <button class="quickbar-slot text-violet-300" onclick="triggerSkill('dash')" title="Hamle (4)"><kbd>4</kbd><span>➜</span></button>
+        <button class="quickbar-slot text-amber-300" onclick="triggerSkill('aura')" title="Hava Kılıcı (1)"><kbd>1</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14 2-9 12h6l-1 8 9-12h-6l1-8Z"/></svg></button>
+        <button class="quickbar-slot text-cyan-300" onclick="triggerSkill('spin')" title="Çevirme (2)"><kbd>2</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7V3m0 0h4M4 3l5 5a7 7 0 0 1 11 3m1 6v4m0 0h-4m4 0-5-5a7 7 0 0 1-11-3"/></svg></button>
+        <button class="quickbar-slot text-orange-300" onclick="triggerSkill('triple')" title="Üç Yönlü (3)"><kbd>3</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3 4 13h6l-1 8 11-12h-7l1-6h-2Z"/></svg></button>
+        <button class="quickbar-slot text-violet-300" onclick="triggerSkill('dash')" title="Hamle (4)"><kbd>4</kbd><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12h14m-5-5 5 5-5 5M4 6v12"/></svg></button>
     </nav>
 
     <div id="inventory-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onclick="if (event.target === this) toggleInventory(false)">
@@ -7820,7 +7909,7 @@
         function setCameraView(view) {
             const mobile = window.innerWidth <= 640;
             const views = {
-                default: { radius: 17.5, lookAt: new THREE.Vector3(0, 1.35, 0), phi: 1.15, fov: 49 },
+                default: { radius: mobile ? (window.innerHeight <= 600 ? 10.5 : 12.7) : 17.5, lookAt: new THREE.Vector3(0, 1.35, 0), phi: 1.15, fov: mobile ? 45 : 49 },
                 fullbody: { radius: mobile ? 6.2 : 5.4, lookAt: new THREE.Vector3(0, 1.14, 0), phi: 1.28, fov: 40 },
                 closeup: { radius: 4.9, lookAt: new THREE.Vector3(0, 1.24, 0.02), phi: 1.22, fov: 40 },
                 hand: { radius: 3.25, lookAt: new THREE.Vector3(0.18, 1.05, 0.12), phi: 1.08, fov: 36 }
